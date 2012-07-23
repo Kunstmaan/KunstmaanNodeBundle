@@ -4,7 +4,7 @@ namespace Kunstmaan\AdminNodeBundle\Listener;
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Kunstmaan\AdminNodeBundle\Entity\Node;
-use Kunstmaan\AdminNodeBundle\Entity\HasNode;
+use Kunstmaan\AdminNodeBundle\Entity\HasNodeInterface;
 use Kunstmaan\AdminBundle\Modules\ClassLookup;
 use Kunstmaan\AdminBundle\Modules\Slugifier;
 // see http://inchoo.net/tools-frameworks/symfony2-event-listeners/
@@ -22,12 +22,13 @@ class NodeGenerator {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
         $classname = ClassLookup::getClass($entity);
-        if($entity instanceof HasNode){
+        if($entity instanceof HasNodeInterface){
             $entityrepo = $em->getRepository($classname);
             $nodeVersion = $em->getRepository('KunstmaanAdminNodeBundle:NodeVersion')->getNodeVersionFor($entity);
             if($nodeVersion!=null){
 	             $nodeTranslation = $nodeVersion->getNodeTranslation();
-	             if($nodeTranslation->getPublicNodeVersion() && $nodeTranslation->getPublicNodeVersion()->getId() == $nodeVersion->getId()){
+                 $publicNodeVersion = $nodeTranslation->getPublicNodeVersion();
+	             if( $publicNodeVersion && $publicNodeVersion->getId() == $nodeVersion->getId()){
 		             $nodeTranslation->setTitle($entity->__toString());
 		             //$nodeTranslation->setSlug(Slugifier::slugify($entity->__toString()));
 		             $nodeTranslation->setOnline($entity->isOnline());
@@ -46,7 +47,7 @@ class NodeGenerator {
 	    /*$entity = $args->getEntity();
 		$em = $args->getEntityManager();
 		$classname = ClassLookup::getClass($entity);
-		if($entity instanceof HasNode){
+		if($entity instanceof HasNodeInterface){
 		$entityrepo = $em->getRepository($classname);
 		$node = $this->getNode($em, $entity->getId(), $classname);
 		$em->remove($node);
@@ -57,7 +58,7 @@ class NodeGenerator {
      	$entity = $args->getEntity();
      	$em = $args->getEntityManager();
      	$classname = ClassLookup::getClass($entity);
-     	if($entity instanceof HasNode){
+     	if($entity instanceof HasNodeInterface){
      		$nodeVersion = $em->getRepository('KunstmaanAdminNodeBundle:NodeVersion')->findOneBy(array('refId' => $entity->getId(), 'refEntityname' => $classname));
      		if($nodeVersion){
      			$nodeTranslation = $nodeVersion->getNodeTranslation();

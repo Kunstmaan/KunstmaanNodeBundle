@@ -2,7 +2,7 @@
 
 namespace Kunstmaan\AdminNodeBundle\Modules;
 
-use Kunstmaan\AdminNodeBundle\Entity\HasNode;
+use Kunstmaan\AdminNodeBundle\Entity\HasNodeInterface;
 use Kunstmaan\AdminNodeBundle\Entity\Node;
 use Kunstmaan\AdminNodeBundle\Entity\NodeTranslation;
 use Symfony\Component\Translation\Translator;
@@ -96,7 +96,7 @@ class NodeMenu {
     			$parent = $parent->getNode();
     		} else if ($parent instanceof NodeMenuItem){
     			$parent = $parent->getNode();
-    		} else if ($parent instanceof HasNode){
+    		} else if ($parent instanceof HasNodeInterface){
     			$parent = $this->em->getRepository('KunstmaanAdminNodeBundle:Node')->getNodeFor($parent);
     		}
     		$node = $this->em->getRepository('KunstmaanAdminNodeBundle:Node')->findOneBy(array('internalName' => $internalName, 'parent' => $parent->getId()));
@@ -105,11 +105,12 @@ class NodeMenu {
     		    foreach($nodes as $n){
     		        $p = $n;
     		        while(is_null($node) && !is_null($p->getParent())){
-    		            if($p->getParent()->getId() == $parent->getId()){
+                        $pParent = $p->getParent();
+    		            if($pParent->getId() == $parent->getId()){
     		                $node = $n;
     		                break;
     		            }
-    		            $p = $p->getParent();
+    		            $p = $pParent;
     		        }
     		    }
     		}
