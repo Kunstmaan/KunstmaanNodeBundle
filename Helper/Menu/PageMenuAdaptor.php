@@ -4,7 +4,7 @@ namespace Kunstmaan\NodeBundle\Helper\Menu;
 
 use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
-use Kunstmaan\AdminBundle\Helper\Menu\MenuBuilder;
+use Kunstmaan\AdminBundle\Helper\Menu\OldMenuBuilder;
 use Kunstmaan\AdminBundle\Helper\Menu\MenuItem;
 use Kunstmaan\AdminBundle\Helper\Menu\MenuAdaptorInterface;
 use Kunstmaan\AdminBundle\Helper\Menu\TopMenuItem;
@@ -42,12 +42,12 @@ class PageMenuAdaptor implements MenuAdaptorInterface
     /**
      * In this method you can add children for a specific parent, but also remove and change the already created children
      *
-     * @param MenuBuilder $menu      The menu builder
+     * @param OldMenuBuilder $menu      The menu builder
      * @param MenuItem[]  &$children The children array that may be adapted
      * @param MenuItem    $parent    The parent menu item
      * @param Request     $request   The request
      */
-    public function adaptChildren(MenuBuilder $menu, array &$children, MenuItem $parent = null, Request $request = null)
+    public function adaptChildren(OldMenuBuilder $menu, array &$children, MenuItem $parent = null, Request $request = null)
     {
         if (is_null($this->nodeMenu)) {
             /* @var Node $node */
@@ -85,13 +85,13 @@ class PageMenuAdaptor implements MenuAdaptorInterface
 
     /**
      * @param int            $currentId The current id
-     * @param MenuBuilder    $menu      The menu builder
+     * @param OldMenuBuilder    $menu      The menu builder
      * @param MenuItem[]     &$children The children array that may be adapted
      * @param NodeMenuItem[] $nodes     The nodes
      * @param MenuItem       $parent    The parent menu item
      * @param Request        $request   The request
      */
-    private function processNodes($currentId, MenuBuilder $menu, array &$children, array $nodes, MenuItem $parent = null, Request $request = null)
+    private function processNodes($currentId, OldMenuBuilder $menu, array &$children, array $nodes, MenuItem $parent = null, Request $request = null)
     {
         if (isset($currentId)) {
             /* @var Node $currentNode */
