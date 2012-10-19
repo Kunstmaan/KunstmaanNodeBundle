@@ -5,7 +5,7 @@ namespace Kunstmaan\NodeBundle\Helper\Menu;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
 use Kunstmaan\AdminBundle\Helper\Menu\OldMenuBuilder;
-use Kunstmaan\AdminBundle\Helper\Menu\MenuItem;
+use Kunstmaan\AdminBundle\Helper\Menu\OldMenuItem;
 use Kunstmaan\AdminBundle\Helper\Menu\MenuAdaptorInterface;
 use Kunstmaan\AdminBundle\Helper\Menu\TopMenuItem;
 use Kunstmaan\NodeBundle\Entity\Node;
@@ -43,11 +43,11 @@ class PageMenuAdaptor implements MenuAdaptorInterface
      * In this method you can add children for a specific parent, but also remove and change the already created children
      *
      * @param OldMenuBuilder $menu      The menu builder
-     * @param MenuItem[]  &$children The children array that may be adapted
-     * @param MenuItem    $parent    The parent menu item
+     * @param OldMenuItem[]  &$children The children array that may be adapted
+     * @param OldMenuItem    $parent    The parent menu item
      * @param Request     $request   The request
      */
-    public function adaptChildren(OldMenuBuilder $menu, array &$children, MenuItem $parent = null, Request $request = null)
+    public function adaptChildren(OldMenuBuilder $menu, array &$children, OldMenuItem $parent = null, Request $request = null)
     {
         if (is_null($this->nodeMenu)) {
             /* @var Node $node */
@@ -86,12 +86,12 @@ class PageMenuAdaptor implements MenuAdaptorInterface
     /**
      * @param int            $currentId The current id
      * @param OldMenuBuilder    $menu      The menu builder
-     * @param MenuItem[]     &$children The children array that may be adapted
+     * @param OldMenuItem[]     &$children The children array that may be adapted
      * @param NodeMenuItem[] $nodes     The nodes
-     * @param MenuItem       $parent    The parent menu item
+     * @param OldMenuItem       $parent    The parent menu item
      * @param Request        $request   The request
      */
-    private function processNodes($currentId, OldMenuBuilder $menu, array &$children, array $nodes, MenuItem $parent = null, Request $request = null)
+    private function processNodes($currentId, OldMenuBuilder $menu, array &$children, array $nodes, OldMenuItem $parent = null, Request $request = null)
     {
         if (isset($currentId)) {
             /* @var Node $currentNode */
@@ -104,7 +104,7 @@ class PageMenuAdaptor implements MenuAdaptorInterface
         }
 
         foreach ($nodes as $child) {
-            $menuItem = new MenuItem($menu);
+            $menuItem = new OldMenuItem($menu);
             $menuItem->setRoute('KunstmaanNodeBundle_pages_edit');
             $menuItem->setRouteparams(array('id' => $child->getId()));
             $menuItem->setInternalName($child->getTitle());

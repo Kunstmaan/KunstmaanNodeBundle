@@ -7,10 +7,10 @@ services:
             - { name: 'doctrine.event_listener', event: 'onFlush', method: 'onFlush' }
             - { name: 'doctrine.event_listener', event: 'postFlush', method: 'postFlush' }
 
-    kunstmaan_node.configure_top_menu_listener:
-        class: Kunstmaan\NodeBundle\EventListener\ConfigureTopMenuListener
+    kunstmaan_node.configure_menu_listener:
+        class: Kunstmaan\NodeBundle\EventListener\ConfigureMenuListener
         tags:
-            - { name: 'kernel.event_listener', event: 'kunstmaan_admin.configureTopMenu', method: 'onTopMenuConfigure' }
+            - { name: 'kernel.event_listener', event: 'kunstmaan_admin.configureMenu', method: 'onMenuConfigure' }
 
     kunstmaan_node.menu.adaptor.pages:
         class: Kunstmaan\NodeBundle\Helper\Menu\PageMenuAdaptor
@@ -28,7 +28,7 @@ services:
         arguments: ["@knp_menu.factory", "@doctrine.orm.entity_manager", "@router", "@event_dispatcher", "@security.context"]
 
     kunstmaan_node.menu.sub_actions:
-        class: Knp\Menu\MenuItem # the service definition requires setting the class
+        class: Knp\Menu\OldMenuItem # the service definition requires setting the class
         factory_service: kunstmaan_node.actions_menu_builder
         factory_method: createSubActionsMenu
         arguments: ["@request"]
@@ -37,7 +37,7 @@ services:
             - { name: 'knp_menu.menu', alias: 'sub_actions' } # The alias is what is used to retrieve the menu
 
     kunstmaan_node.menu.actions:
-        class: Knp\Menu\MenuItem # the service definition requires setting the class
+        class: Knp\Menu\OldMenuItem # the service definition requires setting the class
         factory_service: kunstmaan_node.actions_menu_builder
         factory_method: createActionsMenu
         arguments: ["@request"]
@@ -46,7 +46,7 @@ services:
             - { name: 'knp_menu.menu', alias: 'actions' } # The alias is what is used to retrieve the menu
 
     kunstmaan_node.menu.top_actions:
-        class: Knp\Menu\MenuItem # the service definition requires setting the class
+        class: Knp\Menu\OldMenuItem # the service definition requires setting the class
         factory_service: kunstmaan_node.actions_menu_builder
         factory_method: createTopActionsMenu
         arguments: ["@request"]
