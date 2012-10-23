@@ -29,7 +29,7 @@ services:
         arguments: ["@knp_menu.factory", "@doctrine.orm.entity_manager", "@router", "@event_dispatcher", "@security.context"]
 
     kunstmaan_node.menu.sub_actions:
-        class: Knp\Menu\OldMenuItem # the service definition requires setting the class
+        class: Knp\Menu\MenuItem # the service definition requires setting the class
         factory_service: kunstmaan_node.actions_menu_builder
         factory_method: createSubActionsMenu
         arguments: ["@request"]
@@ -38,7 +38,7 @@ services:
             - { name: 'knp_menu.menu', alias: 'sub_actions' } # The alias is what is used to retrieve the menu
 
     kunstmaan_node.menu.actions:
-        class: Knp\Menu\OldMenuItem # the service definition requires setting the class
+        class: Knp\Menu\MenuItem # the service definition requires setting the class
         factory_service: kunstmaan_node.actions_menu_builder
         factory_method: createActionsMenu
         arguments: ["@request"]
@@ -47,7 +47,7 @@ services:
             - { name: 'knp_menu.menu', alias: 'actions' } # The alias is what is used to retrieve the menu
 
     kunstmaan_node.menu.top_actions:
-        class: Knp\Menu\OldMenuItem # the service definition requires setting the class
+        class: Knp\Menu\MenuItem # the service definition requires setting the class
         factory_service: kunstmaan_node.actions_menu_builder
         factory_method: createTopActionsMenu
         arguments: ["@request"]
