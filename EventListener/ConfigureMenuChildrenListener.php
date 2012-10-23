@@ -58,7 +58,6 @@ class ConfigureMenuChildrenListener
                         $childMenu->setAttribute('rel', 'page');
                     }
                 }
-
             }
         }
     }
