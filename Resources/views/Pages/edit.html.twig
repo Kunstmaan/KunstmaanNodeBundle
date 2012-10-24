@@ -33,9 +33,9 @@
 
 
 {% block header %}
-{% if adminmenu.current %}
+
 	<h1>
-		{{ adminmenu.current.internalname | trans }}
+        {{ admin_menu_current(menu).getName() }}
 		{% if draft %}
 			<small>
 				Draft version (Go to <a href="{{ path('KunstmaanNodeBundle_pages_edit', { 'id': node.id, 'subaction': ''}) }}">public version</a>)
@@ -49,7 +49,7 @@
 			</small>
 		{% endif %}
 	</h1>
-{% endif %}
+
 {% endblock %}
 
 
