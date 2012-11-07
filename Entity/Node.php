@@ -77,6 +77,13 @@ class Node extends AbstractEntity
     /**
      * @var string
      *
+     * @ORM\Column(type="string", nullable=false, name="type")
+     */
+    protected $type;
+
+    /**
+     * @var string
+     *
      * @ORM\Column(type="string", nullable=true, name="internal_name")
      */
     protected $internalName;
@@ -306,6 +313,22 @@ class Node extends AbstractEntity
         $this->deleted = $deleted;
 
         return $this;
+    }
+
+    /**
+     * @param string $type
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 
     /**

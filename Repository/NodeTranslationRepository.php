@@ -96,7 +96,7 @@ class NodeTranslationRepository extends EntityRepository
      *
      * @return NodeTranslation|null
      */
-    public function getNodeTranslationForUrl($urlSlug, $locale)
+    public function getNodeTranslationForUrl($urlSlug, $locale, $nodetype = false)
     {
         $qb = $this->createQueryBuilder('b')
             ->select('b')
@@ -112,6 +112,11 @@ class NodeTranslationRepository extends EntityRepository
         } else {
             $qb->andWhere('b.url = :url');
             $qb->setParameter('url', $urlSlug);
+        }
+
+        if($nodetype !== false) {
+            $qb->andWhere('n.type = :nodetype');
+            $qb->setParameter('nodetype',  $nodetype);
         }
 
         return $qb->getQuery()->getOneOrNullResult();
