@@ -2,14 +2,7 @@
 
 namespace Kunstmaan\NodeBundle\Controller;
 
-use Doctrine\ORM\EntityManager;
-
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Security\Core\SecurityContextInterface;
 
 use Kunstmaan\NodeBundle\Helper\NodeMenu;
 use Kunstmaan\NodeBundle\Helper\RenderContext;
@@ -27,10 +20,8 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 class RedirectController extends Controller
 {
 
-    public function redirectAction($url, $nodetranslation)
+    public function redirectAction($nodetranslation)
     {
-        var_dump($url);
-        var_dump($nodetranslation);
-        die('w00t');
+        return $this->redirect($nodetranslation->getRef($this->getDoctrine()->getManager())->getRedirectUrl());
     }
 }
