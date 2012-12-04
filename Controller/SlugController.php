@@ -6,18 +6,19 @@ use Doctrine\ORM\EntityManager;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 
-use Kunstmaan\NodeBundle\Entity\DynamicRoutingPageInterface;
-use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
 use Kunstmaan\NodeBundle\Helper\NodeMenu;
 use Kunstmaan\NodeBundle\Helper\RenderContext;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
-use Kunstmaan\PagePartBundle\PagePartAdmin\AbstractPagePartAdminConfigurator;
-use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
 use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
+use Kunstmaan\NodeBundle\Entity\DynamicRoutingInterface;
+use Kunstmaan\NodeBundle\Entity\ControllerActionInterface;
+use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
+use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
 
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -38,16 +39,14 @@ class SlugController extends Controller
      * @throws NotFoundHttpException
      * @throws AccessDeniedHttpException
      * @Route("/")
-     * @Route("/draft", defaults={"preview" = true, "draft" = true})
      * @Route("/preview", defaults={"preview" = true})
-     * @Route("/draft/{url}", requirements={"url" = ".+"}, defaults={"preview" = true, "draft" = true}, name="_slug_draft")
      * @Route("/preview/{url}", requirements={"url" = ".+"}, defaults={"preview" = true}, name="_slug_preview")
      * @Route("/{url}", requirements={"url" = ".+"}, name="_slug")
      * @Template()
      *
      * @return Response|array
      */
-    public function slugAction($url = null, $preview = false, $draft = false)
+    public function slugAction($url = null, $preview = false)
     {
         /* @var EntityManager $em */
         $em = $this->getDoctrine()->getManager();
@@ -59,7 +58,6 @@ class SlugController extends Controller
         }
 
         $requiredLocales = $this->container->getParameter('requiredlocales');
-
         $localesArray = explode('|', $requiredLocales);
 
         if (!empty($localesArray[0])) {
@@ -75,8 +73,8 @@ class SlugController extends Controller
                 $url = $locale . '/' . $url;
             }
             $locale = $fallback;
-            if ($draft) {
-                return $this->redirect($this->generateUrl('_slug_draft', array('url' => $url, '_locale' => $locale)));
+            if ($preview) {
+                return $this->redirect($this->generateUrl('_slug_preview', array('url' => $url, '_locale' => $locale)));
             } else {
                 return $this->redirect($this->generateUrl('_slug', array('url' => $url, '_locale' => $locale)));
             }
@@ -91,24 +89,27 @@ class SlugController extends Controller
             $exactMatch = false;
         }
 
-        /* @var HasNodeInterface $page */
-        $page = null;
+        /* @var HasNodeInterface $entity */
+        $entity = null;
         $node = null;
         if ($nodeTranslation) {
-            if ($draft) {
-                $version = $nodeTranslation->getNodeVersion('draft');
-                if (is_null($version)) {
-                    $version = $nodeTranslation->getPublicNodeVersion();
+            if ($preview) {
+                $version = $request->get('version');
+                if (!empty($version) && is_numeric($version)) {
+                    $nodeVersion = $em->getRepository('KunstmaanNodeBundle:NodeVersion')->find($version);
+                    if (!is_null($nodeVersion)) {
+                        $entity = $nodeVersion->getRef($em);
+                    }
                 }
-                $page = $version->getRef($em);
-            } else {
-                $page = $nodeTranslation->getPublicNodeVersion()->getRef($em);
+            }
+            if (is_null($entity)) {
+                $entity = $nodeTranslation->getPublicNodeVersion()->getRef($em);
             }
             $node = $nodeTranslation->getNode();
         }
 
         // If no node translation or no exact match that is not a dynamic routing page -> 404
-        if (!$nodeTranslation || (!$exactMatch && !($page instanceof DynamicRoutingPageInterface))) {
+        if (!$nodeTranslation || (!$exactMatch && !($entity instanceof DynamicRoutingInterface))) {
             throw $this->createNotFoundException('No page found for slug ' . $url);
         }
 
@@ -124,17 +125,17 @@ class SlugController extends Controller
         }
 
         /* @var AclHelper $aclHelper */
-        $aclHelper  = $this->container->get('kunstmaan_admin.acl.helper');
+        $aclHelper = $this->container->get('kunstmaan_admin.acl.helper');
         $nodeMenu = new NodeMenu($em, $securityContext, $aclHelper, $locale, $node);
 
-        if ($page instanceof DynamicRoutingPageInterface) {
-            /* @var DynamicRoutingPageInterface $page */
-            $page->setLocale($locale);
+        if ($entity instanceof DynamicRoutingInterface) {
+            /* @var DynamicRoutingInterface $entity */
+            $entity->setLocale($locale);
             $slugPart = substr($url, strlen($nodeTranslation->getUrl()));
             if (false === $slugPart) {
                 $slugPart = '/';
             }
-            $path = $page->match($slugPart);
+            $path = $entity->match($slugPart);
             if ($path) {
                 $path['nodeTranslationId'] = $nodeTranslation->getId();
 
@@ -142,43 +143,39 @@ class SlugController extends Controller
             }
         }
 
-        //render page
-        $pageParts = array();
-        if ($exactMatch && method_exists($page, 'getPagePartAdminConfigurations')) {
-            /**
-             * @noinspection PhpUndefinedMethodInspection
-             * @var AbstractPagePartAdminConfigurator $pagePartAdminConfiguration
-             */
-            foreach ($page->getPagePartAdminConfigurations() as $pagePartAdminConfiguration) {
-                $context = $pagePartAdminConfiguration->getDefaultContext();
-                $pageParts[$context] = $em->getRepository('KunstmaanPagePartBundle:PagePartRef')->getPageParts($page, $context);
-            }
-        }
-        $renderContext = new RenderContext(array(
-                'nodetranslation' => $nodeTranslation,
-                'slug' => $url,
-                'page' => $page,
-                'resource' => $page,
-                'pageparts' => $pageParts,
-                'nodemenu' => $nodeMenu,
-                'locales' => $localesArray));
-        $hasView = false;
-        if (method_exists($page, 'getDefaultView')) {
-            /** @noinspection PhpUndefinedMethodInspection */
-            $renderContext->setView($page->getDefaultView());
-            $hasView = true;
-        }
-        if (method_exists($page, 'service')) {
-            /** @noinspection PhpUndefinedMethodInspection */
-            $redirect = $page->service($this->container, $request, $renderContext);
-            if (!empty($redirect)) {
-                return $redirect;
-            } elseif (!$exactMatch && !$hasView) {
-                // If it was a dynamic routing page and no view and no service implementation -> 404
-                throw $this->createNotFoundException('No page found for slug ' . $url);
-            }
+        if ($entity instanceof ControllerActionInterface) {
+            /* @var ControllerActionInterface $entity */
+            return $this->forward($entity->getControllerAction(), $entity->getPathParams(), $entity->getQueryParams());
         }
 
-        return $this->render($renderContext->getView(), (array) $renderContext);
+        //render page
+        $renderContext = new RenderContext(
+            array(
+                'nodetranslation' => $nodeTranslation,
+                'slug' => $url,
+                'page' => $entity,
+                'resource' => $entity,
+                'nodemenu' => $nodeMenu,
+                'locales' => $localesArray
+            )
+        );
+        if (method_exists($entity, 'getDefaultView')) {
+            /** @noinspection PhpUndefinedMethodInspection */
+            $renderContext->setView($entity->getDefaultView());
+        }
+
+        /** @noinspection PhpUndefinedMethodInspection */
+        $response = $entity->service($this->container, $request, $renderContext);
+
+        if ($response instanceof RedirectResponse) {
+            return $response;
+        }
+
+        $view = $renderContext->getView();
+        if (empty($view)) {
+            throw $this->createNotFoundException('No page found for slug ' . $url);
+        }
+
+        return $this->render($view, (array) $renderContext);
     }
 }

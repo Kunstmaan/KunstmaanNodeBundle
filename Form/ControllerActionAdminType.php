@@ -2,30 +2,20 @@
 
 namespace Kunstmaan\NodeBundle\Form;
 
-use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\AbstractType;
 
-/**
- * NodeAdminType
- */
-class NodeAdminType extends AbstractType
+class ControllerActionAdminType extends AbstractType
 {
+
     /**
      * @param FormBuilderInterface $builder
      * @param array                $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('id', 'hidden')
-                ->add('hiddenFromNav', 'checkbox', array('label' => 'Hidden from menu', 'required' => false));
-    }
-
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        return 'node';
+        $builder->add('id', 'hidden');
+        $builder->add('title');
     }
 
     /**
@@ -36,7 +26,16 @@ class NodeAdminType extends AbstractType
     public function getDefaultOptions(array $options)
     {
         return array(
-            'data_class' => 'Kunstmaan\NodeBundle\Entity\Node',
+            'data_class' => 'Kunstmaan\NodeBundle\Entity\AbstractControllerAction',
         );
     }
+
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return 'controller_action';
+    }
+
 }

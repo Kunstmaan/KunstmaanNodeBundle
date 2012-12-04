@@ -5,7 +5,8 @@ namespace Kunstmaan\NodeBundle\Tests\Entity;
 use Kunstmaan\AdminBundle\Entity\AbstractEntity;
 use Kunstmaan\NodeBundle\Entity\AbstractPage;
 use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
-use Kunstmaan\NodeBundle\Form\PageAdminType;
+
+use Symfony\Component\Form\AbstractType;
 
 /**
  * TestEntity
@@ -67,11 +68,16 @@ class TestEntity extends AbstractEntity implements HasNodeInterface
     }
 
     /**
-     * @todo: this should be moved to another location?
-     *
-     * @return PageAdminType
+     * @return AbstractType
      */
     public function getDefaultAdminType()
+    {
+    }
+
+    /**
+     * @return array
+     */
+    public function getPossibleChildTypes()
     {
     }
 }

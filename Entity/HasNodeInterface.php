@@ -2,7 +2,7 @@
 
 namespace Kunstmaan\NodeBundle\Entity;
 
-use Kunstmaan\NodeBundle\Form\PageAdminType;
+use Symfony\Component\Form\AbstractType;
 
 /**
  * HasNodeInterface Interface
@@ -32,16 +32,6 @@ interface HasNodeInterface
     public function setTitle($title);
 
     /**
-     * @return string
-     */
-    public function getPageTitle();
-
-    /**
-     * @return bool
-     */
-    public function isOnline();
-
-    /**
      * @return HasNodeInterface
      */
     public function getParent();
@@ -52,10 +42,13 @@ interface HasNodeInterface
     public function setParent(HasNodeInterface $hasNode);
 
     /**
-     * @todo: this should be moved to another location?
-     *
-     * @return PageAdminType
+     * @return AbstractType
      */
     public function getDefaultAdminType();
+
+    /**
+     * @return array
+     */
+    public function getPossibleChildTypes();
 
 }

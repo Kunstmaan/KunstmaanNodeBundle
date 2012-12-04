@@ -7,7 +7,6 @@ use Kunstmaan\NodeBundle\Entity\Node;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
 use Kunstmaan\NodeBundle\Entity\NodeVersion;
 use Kunstmaan\NodeBundle\Helper\Slugifier;
-use Kunstmaan\AdminBundle\Entity\AddCommand;
 use Kunstmaan\AdminBundle\Entity\User as Baseuser;
 use Kunstmaan\UtilitiesBundle\Helper\ClassLookup;
 
@@ -192,20 +191,17 @@ class NodeTranslationRepository extends EntityRepository
         }
 
         $nodeTranslation = new NodeTranslation();
-        $nodeTranslation->setNode($node);
-        $nodeTranslation->setLang($lang);
-        $nodeTranslation->setTitle($hasNode);
-        $nodeTranslation->setSlug(Slugifier::slugify($hasNode, ''));
-        $nodeTranslation->setOnline($hasNode->isOnline());
+        $nodeTranslation
+            ->setNode($node)
+            ->setLang($lang)
+            ->setTitle($hasNode->getTitle())
+            ->setSlug(Slugifier::slugify($hasNode->getTitle(), ''))
+            ->setOnline(false)
+            ->setWeight(0);
 
-        $addCommand = new AddCommand($em, $owner);
-        $addCommand->execute(
-            "new translation for page \"" . $nodeTranslation->getTitle() . "\" with locale: " . $lang,
-            array('entity' => $nodeTranslation)
-        );
+        $em->persist($nodeTranslation);
 
-        $nodeVersion = $em->getRepository('KunstmaanNodeBundle:NodeVersion')
-            ->createNodeVersionFor($hasNode, $nodeTranslation, $owner);
+        $nodeVersion = $em->getRepository('KunstmaanNodeBundle:NodeVersion')->createNodeVersionFor($hasNode, $nodeTranslation, $owner, null);
 
         $nodeTranslation->setPublicNodeVersion($nodeVersion);
         $em->persist($nodeTranslation);
