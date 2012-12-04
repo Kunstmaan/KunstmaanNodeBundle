@@ -15,6 +15,6 @@ class ConfigureMenuListener
         $menu = $event->getMenu();
         $factory = $event->getFactory();
 
-        $menu->addChild($factory->createItem('Pages', array('route' => 'KunstmaanNodeBundle_pages')));
+        $menu->addChild($factory->createItem('Pages', array('route' => 'KunstmaanNodeBundle_nodes')));
     }
 }
