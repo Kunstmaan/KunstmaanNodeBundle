@@ -7,11 +7,9 @@ use Kunstmaan\AdminBundle\Event\ConfigureMenuEvent;
 class ConfigureMenuListener
 {
 
-    public function __construct()
-    {
-
-    }
-
+    /**
+     * @param ConfigureMenuEvent $event
+     */
     public function onMenuConfigure(ConfigureMenuEvent $event)
     {
         $menu = $event->getMenu();

@@ -19,12 +19,27 @@ class ConfigureMenuChildrenListener
      */
     private $request;
 
+    /**
+     * @var EntityManager
+     */
     private $em;
 
+    /**
+     * @var \SecurityContextInterface
+     */
     private $securityContext;
 
+    /**
+     * @var AclHelper
+     */
     private $aclHelper;
 
+    /**
+     * @param Request                   $request
+     * @param EntityManager             $em
+     * @param SecurityContextInterface  $securityContext
+     * @param AclHelper                 $aclHelper
+     */
     public function __construct(Request $request, EntityManager $em, SecurityContextInterface $securityContext, AclHelper $aclHelper)
     {
         $this->request = $request;
@@ -33,6 +48,9 @@ class ConfigureMenuChildrenListener
         $this->aclHelper       = $aclHelper;
     }
 
+    /**
+     * @param ConfigureMenuChildrenEvent $event
+     */
     public function onMenuChildrenConfigure(ConfigureMenuChildrenEvent $event)
     {
         $menuParentNames = array();
