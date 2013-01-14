@@ -11,21 +11,7 @@
     {% endblock %}
 
   {% block body %}
-  	<header>
-		<div class="navbar navbar-inverse navbar-fixed-top" data-dropdown="dropdown">
-			<div class="navbar-inner">
-				<div class="container-fluid">
-					<a class="brand" href="#">{{ websitetitle | trans }}</a>
-					<nav>
-						<ul class="nav secondary-nav">
-							{% set route = app.request.attributes.get('_route') %}
-							{{ localeswitcher_widget(requiredlocales, route) }}
-						</ul>
-					</nav>
-				</div>
-			</div>
-		</div>
-	</header>
+  	
 	<!--=========Content=========-->
 	<div class="container-fluid">
 		<!--=========Aside=========-->
