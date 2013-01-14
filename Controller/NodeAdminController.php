@@ -111,8 +111,7 @@ class NodeAdminController extends Controller
     }
 
     /**
-     * @param int    $id            The node id
-     * @param string $otherlanguage The locale from where the version must be copied
+     * @param int $id The node id
      *
      * @throws AccessDeniedException
      * @Route("/{id}/copyfromotherlanguage", requirements={"_method" = "GET", "id" = "\d+"}, name="KunstmaanNodeBundle_nodes_copyfromotherlanguage")
@@ -559,9 +558,9 @@ class NodeAdminController extends Controller
     }
 
     /**
-     * @param HasNodeInterface  $page            The page
-     * @param NodeTranslation   $nodeTranslation The node translation
-     * @param NodeVersion       $nodeVersion     The node version
+     * @param HasNodeInterface $page            The page
+     * @param NodeTranslation  $nodeTranslation The node translation
+     * @param NodeVersion      $nodeVersion     The node version
      *
      * @return NodeVersion
      */
@@ -598,10 +597,10 @@ class NodeAdminController extends Controller
     }
 
     /**
-     * @param EntityManager    $em       The Entity Manager
-     * @param User             $user     The user who deletes the children
-     * @param string           $locale   The locale that was used
-     * @param ArrayCollection  $children The children array
+     * @param EntityManager   $em       The Entity Manager
+     * @param User            $user     The user who deletes the children
+     * @param string          $locale   The locale that was used
+     * @param ArrayCollection $children The children array
      */
     private function deleteNodeChildren(EntityManager $em, User $user, $locale, ArrayCollection $children)
     {
