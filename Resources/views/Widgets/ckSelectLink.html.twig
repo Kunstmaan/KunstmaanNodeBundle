@@ -11,21 +11,7 @@
     {% endblock %}
 
   {% block body %}
-  	<header>
-		<div class="navbar navbar-inverse navbar-fixed-top" data-dropdown="dropdown">
-			<div class="navbar-inner">
-				<div class="container-fluid">
-					<a class="brand" href="#">{{ websitetitle | trans }}</a>
-					<nav>
-						<ul class="nav secondary-nav">
-							{% set route = app.request.attributes.get('_route') %}
-							{{ localeswitcher_widget(requiredlocales, route) }}
-						</ul>
-					</nav>
-				</div>
-			</div>
-		</div>
-	</header>
+  	
 	<!--=========Content=========-->
 	<div class="container-fluid">
 		<!--=========Aside=========-->
@@ -33,8 +19,10 @@
 	    <aside class="sidebar">
 	    	<h1>Select a link</h1>
 	    	<div class="search_wrp">
-	    		<input type="text" id="searchVal" placeholder="Search" />
-	    		<button id="search" class="btn search"><i class="icon-search"></i></button>
+	    		<form id="treeform">
+		    		<input type="text" id="searchVal" placeholder="Search" />
+		    		<button id="search" class="btn search"><i class="icon-search"></i></button>
+	    		</form>
 	    	</div>
 <div id="tree" class="tree">
         <ul>
