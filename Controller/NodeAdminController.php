@@ -3,6 +3,8 @@
 namespace Kunstmaan\NodeBundle\Controller;
 
 use DateTime;
+use Kunstmaan\NodeBundle\Form\NodeMenuTabTranslationAdminType;
+use Kunstmaan\NodeBundle\Form\NodeMenuTabAdminType;
 use InvalidArgumentException;
 
 use Doctrine\ORM\EntityManager;
@@ -109,8 +111,7 @@ class NodeAdminController extends Controller
     }
 
     /**
-     * @param int    $id            The node id
-     * @param string $otherlanguage The locale from where the version must be copied
+     * @param int $id The node id
      *
      * @throws AccessDeniedException
      * @Route("/{id}/copyfromotherlanguage", requirements={"_method" = "GET", "id" = "\d+"}, name="KunstmaanNodeBundle_nodes_copyfromotherlanguage")
@@ -468,8 +469,13 @@ class NodeAdminController extends Controller
         $propertiesTab = new Tab('Properties');
         $propertiesTab->addType('main', $page->getDefaultAdminType(), $page);
         $propertiesTab->addType('node', $node->getDefaultAdminType(), $node);
-        $propertiesTab->addType('nodetranslation', $nodeTranslation->getDefaultAdminType(), $nodeTranslation);
         $tabPane->addTab($propertiesTab);
+
+        // Menu tab
+        $menuTab = new Tab('Menu');
+        $menuTab->addType('menunodetranslation', new NodeMenuTabTranslationAdminType(), $nodeTranslation);
+        $menuTab->addType('menunode', new NodeMenuTabAdminType(), $node);
+        $tabPane->addTab($menuTab);
 
         $this->get('event_dispatcher')->dispatch(Events::ADAPT_FORM, new AdaptFormEvent($tabPane, $page, $node, $nodeTranslation, $nodeVersion));
         $tabPane->buildForm();
@@ -478,6 +484,17 @@ class NodeAdminController extends Controller
             $tabPane->bindRequest($request);
 
             if ($tabPane->isValid()) {
+                //Check the version timeout and make a new nodeversion if the timeout is passed
+                $thresholdDate = date("Y-m-d H:i:s", time()-$this->container->getParameter("kunstmaan_node.version_timeout"));
+                $updatedDate = date("Y-m-d H:i:s", strtotime($nodeVersion->getUpdated()->format("Y-m-d H:i:s")));
+                if ($thresholdDate >= $updatedDate) {
+                    if ($nodeVersion == $nodeTranslation->getPublicNodeVersion()) {
+                        $nodeVersion = $this->createPublicVersion($page, $nodeTranslation, $nodeVersion, false);
+                    } else {
+                        $nodeVersion = $this->createDraftVersion($page, $nodeTranslation, $nodeVersion);
+                    }
+                }
+
                 $this->get('event_dispatcher')->dispatch(Events::PRE_PERSIST, new NodeEvent($node, $nodeTranslation, $nodeVersion, $page));
 
                 $nodeTranslation->setTitle($page->getTitle());
@@ -497,11 +514,14 @@ class NodeAdminController extends Controller
 
                 $this->get('session')->getFlashBag()->add('success', 'Page has been edited!');
 
-                return $this->redirect($this->generateUrl('KunstmaanNodeBundle_nodes_edit', array(
+                $params = array(
                     'id' => $node->getId(),
                     'subaction' => $subaction,
-                    'currenttab' => $tabPane->getActiveTab(),
-                )));
+                    'currenttab' => $tabPane->getActiveTab()
+                );
+                $params = array_merge($params, $tabPane->getExtraParams($request));
+
+                return $this->redirect($this->generateUrl('KunstmaanNodeBundle_nodes_edit', $params));
             }
         }
 
@@ -520,7 +540,8 @@ class NodeAdminController extends Controller
             'draft' => $draft,
             'draftNodeVersion' => $draftNodeVersion,
             'subaction' => $subaction,
-            'tabPane' => $tabPane
+            'tabPane' => $tabPane,
+            'editmode' => true
         );
     }
 
@@ -528,16 +549,19 @@ class NodeAdminController extends Controller
      * @param HasNodeInterface $page            The page
      * @param NodeTranslation  $nodeTranslation The node translation
      * @param NodeVersion      $nodeVersion     The node version
+     * @param boolean          $publish         Publish node
      *
      * @return mixed
      */
-    private function createPublicVersion(HasNodeInterface $page, NodeTranslation $nodeTranslation, NodeVersion $nodeVersion)
+    private function createPublicVersion(HasNodeInterface $page, NodeTranslation $nodeTranslation, NodeVersion $nodeVersion, boolean $publish = true)
     {
         $newPublicPage = $this->get('kunstmaan_admin.clone.helper')->deepCloneAndSave($page);
         $nodeVersion = $this->em->getRepository('KunstmaanNodeBundle:NodeVersion')->createNodeVersionFor($newPublicPage, $nodeTranslation, $this->user, $nodeVersion);
         $nodeTranslation->setPublicNodeVersion($nodeVersion);
         $nodeTranslation->setTitle($newPublicPage->getTitle());
-        $nodeTranslation->setOnline(true);
+        if ($publish) {
+            $nodeTranslation->setOnline(true);
+        }
 
         $this->em->persist($nodeTranslation);
         $this->em->flush();
@@ -548,9 +572,9 @@ class NodeAdminController extends Controller
     }
 
     /**
-     * @param HasNodeInterface  $page            The page
-     * @param NodeTranslation   $nodeTranslation The node translation
-     * @param NodeVersion       $nodeVersion     The node version
+     * @param HasNodeInterface $page            The page
+     * @param NodeTranslation  $nodeTranslation The node translation
+     * @param NodeVersion      $nodeVersion     The node version
      *
      * @return NodeVersion
      */
@@ -587,10 +611,10 @@ class NodeAdminController extends Controller
     }
 
     /**
-     * @param EntityManager    $em       The Entity Manager
-     * @param User             $user     The user who deletes the children
-     * @param string           $locale   The locale that was used
-     * @param ArrayCollection  $children The children array
+     * @param EntityManager   $em       The Entity Manager
+     * @param User            $user     The user who deletes the children
+     * @param string          $locale   The locale that was used
+     * @param ArrayCollection $children The children array
      */
     private function deleteNodeChildren(EntityManager $em, User $user, $locale, ArrayCollection $children)
     {

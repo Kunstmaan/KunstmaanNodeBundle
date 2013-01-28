@@ -3,8 +3,11 @@
 namespace Kunstmaan\NodeBundle\Entity;
 
 use Kunstmaan\AdminBundle\Entity\AbstractEntity;
+use Kunstmaan\NodeBundle\Form\NodeMenuTabTranslationAdminType;
+use Kunstmaan\NodeBundle\Form\NodeMenuTabAdminType;
 use Kunstmaan\NodeBundle\Entity\Node;
 use Kunstmaan\NodeBundle\Form\NodeTranslationAdminType;
+use Kunstmaan\NodeBundle\Helper\Slugifier;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,7 +17,7 @@ use Doctrine\ORM\EntityManager;
  * NodeTranslation
  *
  * @ORM\Entity(repositoryClass="Kunstmaan\NodeBundle\Repository\NodeTranslationRepository")
- * @ORM\Table(name="kuma_node_translations")
+ * @ORM\Table(name="kuma_node_translations", uniqueConstraints={@ORM\UniqueConstraint(name="ix_kuma_node_translations_node_lang", columns={"node_id", "lang"})})
  * @ORM\ChangeTrackingPolicy("DEFERRED_EXPLICIT")
  */
 class NodeTranslation extends AbstractEntity
@@ -23,7 +26,7 @@ class NodeTranslation extends AbstractEntity
     /**
      * @var Node
      *
-     * @ORM\ManyToOne(targetEntity="Node")
+     * @ORM\ManyToOne(targetEntity="Node", inversedBy="nodeTranslations")
      * @ORM\JoinColumn(name="node_id", referencedColumnName="id")
      */
     protected $node;
@@ -198,8 +201,8 @@ class NodeTranslation extends AbstractEntity
      * @return NodeTranslation
      */
     public function setSlug($slug)
-    {
-        $this->slug = $slug;
+	{
+        $this->slug = Slugifier::slugify($slug, '');
 
         return $this;
     }
