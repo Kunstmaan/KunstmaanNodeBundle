@@ -32,9 +32,10 @@
 {% endblock %}
 
 {% block header %}
-    {% if adminmenu.current %}
+    {% set currentmenuitem = admin_menu_current(menu) %}
+    {% if currentmenuitem %}
         <h1>
-            {{ adminmenu.current.internalname | trans }}
+            {{ currentmenuitem.getName() }}
             {% if draft %}
                 <small>
                     Draft version (Go to <a href="{{ path('KunstmaanNodeBundle_nodes_edit', { 'id': node.id, 'subaction': ''}) }}">public version</a>)

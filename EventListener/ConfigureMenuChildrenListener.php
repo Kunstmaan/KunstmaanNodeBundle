@@ -61,7 +61,7 @@ class ConfigureMenuChildrenListener
             if ('Pages' == $event->getMenu()->getName()) {
                 $nodeMenu = new NodeMenu($this->em, $this->securityContext, $this->aclHelper, $this->request->getLocale(), null, PermissionMap::PERMISSION_EDIT, true, true);
                 foreach ($nodeMenu->getTopNodes() as $child) {
-                    $childMenu = $event->getMenu()->addChild($event->getFactory()->createItem($child->getTitle(), array('route' => 'KunstmaanNodeBundle_pages_edit', 'routeParameters' => array('id' =>  $child->getId()))));
+                    $childMenu = $event->getMenu()->addChild($event->getFactory()->createItem($child->getTitle(), array('route' => 'KunstmaanNodeBundle_nodes_edit', 'routeParameters' => array('id' =>  $child->getId()))));
                     $childMenu->setExtra('id', $child->getId());
                     $childMenu->setAttribute('rel', 'page');
                 }
@@ -71,7 +71,7 @@ class ConfigureMenuChildrenListener
                 foreach ($children as $child) {
                     $nodeTranslation = $child->getNodeTranslation($this->request->getLocale(), true);
                     if (!is_null($nodeTranslation)) {
-                        $childMenu = $event->getMenu()->addChild($event->getFactory()->createItem($nodeTranslation->getTitle(), array('route' => 'KunstmaanNodeBundle_pages_edit', 'routeParameters' => array('id' =>  $child->getId()))));
+                        $childMenu = $event->getMenu()->addChild($event->getFactory()->createItem($nodeTranslation->getTitle(), array('route' => 'KunstmaanNodeBundle_nodes_edit', 'routeParameters' => array('id' =>  $child->getId()))));
                         $childMenu->setExtra('id', $child->getId());
                         $childMenu->setAttribute('rel', 'page');
                     }
