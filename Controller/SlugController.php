@@ -61,7 +61,9 @@ class SlugController extends Controller
         /* @var HasNodeInterface $entity */
         $entity     = null;
         $node       = $nodeTranslation->getNode();
+        $cache      = true;
         if ($preview) {
+            $cache = false;
             $version = $request->get('version');
             if (!empty($version) && is_numeric($version)) {
                 $nodeVersion = $em->getRepository('KunstmaanNodeBundle:NodeVersion')->find($version);
@@ -114,6 +116,14 @@ class SlugController extends Controller
             throw $this->createNotFoundException('No page found for slug ' . $url);
         }
 
-        return $this->render($view, $renderContext->getArrayCopy());
+        $response = $this->render($view, $renderContext->getArrayCopy());
+
+        if ((!$cache) and ($response instanceof Response)) {
+            $response->setPrivate();
+            $response->setMaxAge(0);
+            $response->headers->addCacheControlDirective('must-revalidate', true);
+        }
+
+        return $response;
     }
 }
