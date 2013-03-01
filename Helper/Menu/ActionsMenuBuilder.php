@@ -82,7 +82,12 @@ class ActionsMenuBuilder
         $menu->setChildrenAttribute('class', 'sub_actions');
 
         if (!is_null($activeNodeVersion)) {
-            $menu->addChild('subaction.versions', array('linkAttributes' => array('data-toggle' => 'modal', 'data-target' => '#versions')));
+            $page = $activeNodeVersion->getRef($this->em);
+            $isStructureNode = $page->isStructureNode();
+
+            if (!$isStructureNode) {
+                $menu->addChild('subaction.versions', array('linkAttributes' => array('data-toggle' => 'modal', 'data-target' => '#versions')));
+            }
         }
 
         $this->dispatcher->dispatch(Events::CONFIGURE_SUB_ACTION_MENU, new ConfigureActionMenuEvent($this->factory, $menu, $activeNodeVersion));
@@ -104,8 +109,11 @@ class ActionsMenuBuilder
         if (!is_null($activeNodeVersion)) {
             $activeNodeTranslation = $activeNodeVersion->getNodeTranslation();
             $node = $activeNodeTranslation->getNode();
+            $page = $activeNodeVersion->getRef($this->em);
+            $isStructureNode = $page->isStructureNode();
+
             $isFirst = true;
-            if ('draft' == $activeNodeVersion->getType()) {
+            if (('draft' == $activeNodeVersion->getType()) && !$isStructureNode) {
                 if ($this->context->isGranted(PermissionMap::PERMISSION_EDIT, $node)) {
                     $menu->addChild('action.saveasdraft', array('linkAttributes' => array('type' => 'submit', 'onClick' => 'isEdited=false', 'class' => 'btn' . ($isFirst ? ' btn-primary' : ''), 'value' => 'save', 'name' => 'save'), 'extras' => array('renderType' => 'button')));
                     $isFirst = false;
@@ -119,24 +127,28 @@ class ActionsMenuBuilder
                     $menu->addChild('action.save', array('linkAttributes' => array('type' => 'submit', 'onClick' => 'isEdited=false', 'class' => 'btn' . ($isFirst ? ' btn-primary' : ''), 'value' => 'save', 'name' => 'save'), 'extras' => array('renderType' => 'button')));
                     $isFirst = false;
                 }
-                if ($activeNodeTranslation->isOnline() &&  $this->context->isGranted(PermissionMap::PERMISSION_UNPUBLISH, $node)) {
-                    $menu->addChild('action.unpublish', array('linkAttributes' => array('class' => 'btn', 'data-toggle' => 'modal', 'data-target' => '#unpub')));
-                } elseif (!$activeNodeTranslation->isOnline() &&  $this->context->isGranted(PermissionMap::PERMISSION_PUBLISH, $node)) {
-                    $menu->addChild('action.publish', array('linkAttributes' => array('class' => 'btn', 'data-toggle' => 'modal', 'data-target' => '#pub')));
+                if (!$isStructureNode) {
+                    if ($activeNodeTranslation->isOnline() &&  $this->context->isGranted(PermissionMap::PERMISSION_UNPUBLISH, $node)) {
+                        $menu->addChild('action.unpublish', array('linkAttributes' => array('class' => 'btn', 'data-toggle' => 'modal', 'data-target' => '#unpub')));
+                    } elseif (!$activeNodeTranslation->isOnline() &&  $this->context->isGranted(PermissionMap::PERMISSION_PUBLISH, $node)) {
+                        $menu->addChild('action.publish', array('linkAttributes' => array('class' => 'btn', 'data-toggle' => 'modal', 'data-target' => '#pub')));
+                    }
+                    if ($this->context->isGranted(PermissionMap::PERMISSION_EDIT, $node)) {
+                        $menu->addChild('action.saveasdraft', array('linkAttributes' => array('type' => 'submit', 'class' => 'btn' . ($isFirst ? ' btn-primary' : ''), 'value' => 'saveasdraft', 'name' => 'saveasdraft'), 'extras' => array('renderType' => 'button')));
+                    }
+                    $menu->addChild('action.preview', array('uri' => $this->router->generate('_slug_preview', array('url' => $activeNodeTranslation->getUrl())), 'linkAttributes' => array('target' => '_blank', 'class' => 'btn')));
                 }
-                if ($this->context->isGranted(PermissionMap::PERMISSION_EDIT, $node)) {
-                    $menu->addChild('action.saveasdraft', array('linkAttributes' => array('type' => 'submit', 'class' => 'btn' . ($isFirst ? ' btn-primary' : ''), 'value' => 'saveasdraft', 'name' => 'saveasdraft'), 'extras' => array('renderType' => 'button')));
-                }
-                $menu->addChild('action.preview', array('uri' => $this->router->generate('_slug_preview', array('url' => $activeNodeTranslation->getUrl())), 'linkAttributes' => array('target' => '_blank', 'class' => 'btn')));
+
             }
-            $page = $activeNodeVersion->getRef($this->em);
+
             if (!is_null($page) && $page instanceof PageInterface) {
                 $possibleChildPages = $page->getPossibleChildTypes();
                 if (!empty($possibleChildPages)) {
                     $menu->addChild('action.addsubpage', array('linkAttributes' => array('type' => 'button', 'class' => 'btn', 'data-toggle' => 'modal', 'data-target' => '#add-subpage-modal'), 'extras' => array('renderType' => 'button')));
                 }
             }
-            if ($this->context->isGranted(PermissionMap::PERMISSION_DELETE, $node)) {
+
+            if (!is_null($node->getParent()) && ($this->context->isGranted(PermissionMap::PERMISSION_DELETE, $node))) {
                 $menu->addChild('action.delete', array('linkAttributes' => array('type' => 'button', 'class' => 'btn', 'onClick' => 'oldEdited = isEdited; isEdited=false', 'data-toggle' => 'modal', 'data-target' => '#delete-page-modal'), 'extras' => array('renderType' => 'button')));
             }
         }
