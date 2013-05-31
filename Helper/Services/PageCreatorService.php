@@ -2,15 +2,22 @@
 
 namespace Kunstmaan\NodeBundle\Helper\Services;
 
+use Doctrine\ORM\EntityManager;
 use Kunstmaan\NodeBundle\Entity\HasNodeInterface,
     Kunstmaan\NodeBundle\Entity\Node;
 
+use Kunstmaan\NodeBundle\Event\Events;
+use Kunstmaan\NodeBundle\Event\NodeEvent;
 use Kunstmaan\NodeBundle\Repository\NodeRepository,
     Kunstmaan\NodeBundle\Helper\Services\ACLPermissionCreatorService;
 
+use Kunstmaan\NodeBundle\Repository\NodeTranslationRepository;
 use Kunstmaan\PagePartBundle\Helper\HasPagePartsInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface,
     Symfony\Component\DependencyInjection\ContainerInterface;
+
+use Kunstmaan\AdminBundle\Entity\User as Baseuser;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Service to create new pages.
@@ -18,145 +25,155 @@ use Symfony\Component\DependencyInjection\ContainerAwareInterface,
 
 class PageCreatorService Implements ContainerAwareInterface
 {
+
     /**
-     *
-     * Automatically calls the ACL + sets the slugs to empty when the page is an Abstract node.
-     *
-     * @param $pageTypeInstance
-     * @param array $translations array containing arrays. Sample:
-     * [
-     *  [   "language" => "nl",
-     *      "callback" => function($page, $translation) {
-     *          $translation->setTitle('NL titel');
-     *      }
-     *  ],
-     *  [   "language" => "fr",
-     *      "callback" => function($page, $translation) {
-     *          $translation->setTitle('FR titel');
-     *      }
-     *  ]
-     * ]
-     * @param array options -
-     *      parent: type node, nodetransation or page.
-     *      page_internal_name: string. name the page will have in the database.
-     *      set_online: bool. if true the page will be set as online after creation.
-     *      todo: creator: user?
-     *
-     * @return Node The new node for the page.
-     *
-     * @throws \InvalidArgumentException
+     * @var EntityManager
      */
-    public function createPage(HasNodeInterface $pageTypeInstance, array $translations, array $options = array())
+    private $em;
+
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
+    public function __construct(EntityManager $em, EventDispatcherInterface $eventDispatcher)
     {
-        if (is_null($options)) {
-            $options = array();
+        $this->em = $em;
+        $this->eventDispatcher = $eventDispatcher;
+    }
+
+    public function createPage($locale, HasNodeInterface $pageInstance, $options)
+    {
+        $options = array_merge(array(
+            'owner' => null,
+            'parent' => null,
+            'node' => null,
+            'online' => false,
+            'internal_name' => '',
+            'page_setter' => null,
+            'node_setter' => null,
+            'node_translation_setter' => null,
+        ), $options);
+
+        if (is_null($options['owner'])) {
+            throw new \InvalidArgumentException('Owner must be specified in the options array');
         }
 
-        if (is_null($translations) or (count($translations) == 0)) {
-            throw new \InvalidArgumentException('Needs at least 1 translation in the translations array');
+        /** @var BaseUser $owner */
+        $owner = $options['owner'];
+        /** @var HasNodeInterface|Node $parent */
+        $parent = $options['parent'];
+        /** @var Node $node */
+        $node = $options['node'];
+        $online = $options['online'];
+        $internalName = $options['internal_name'];
+
+        $newPage = clone $pageInstance;
+        if (is_callable($options['page_setter'])) {
+            $options['page_setter']($newPage, $locale);
         }
+        $this->em->persist($newPage);
+        $this->em->flush();
 
-        // TODO: Wrap it all in a transaction.
-        $em = $this->container->get('doctrine.orm.entity_manager');
-
-        /* @var NodeRepository $nodeRepo */
-        $nodeRepo = $em->getRepository('KunstmaanNodeBundle:Node');
-        $userRepo = $em->getRepository('KunstmaanAdminBundle:User');
-        $seoRepo = $em->getRepository('KunstmaanSeoBundle:Seo');
-
-        // TODO: Get this from options.
-        $creator = $userRepo->findOneBy(array('username' => 'pagecreator'));
-
-        $parent = isset($options['parent']) ? $options['parent'] : null;
-
-        $pageInternalName = isset($options['page_internal_name']) ? $options['page_internal_name'] : '';
-
-        $setOnline = isset($options['set_online']) ? $options['set_online'] : false;
-
-        // We need to get the language of the first translation so we can create the rootnode.
-        // This will also create a translationnode for that language attached to the rootnode.
-        $first = true;
-        $rootNode = null;
-
-        /* @var \Kunstmaan\NodeBundle\Repository\NodeTranslationRepository $nodeTranslationRepo*/
-        $nodeTranslationRepo = $em->getRepository('KunstmaanNodeBundle:NodeTranslation');
-
-        foreach ($translations as $translation) {
-            $language = $translation['language'];
-            $callback = $translation['callback'];
-
-            $translationNode = null;
-            if ($first) {
-                $first = false;
-
-                $em->persist($pageTypeInstance);
-                $em->flush();
-
-                // Fetch the translation instead of creating it.
-                // This returns the rootnode.
-                $rootNode = $nodeRepo->createNodeFor($pageTypeInstance, $language, $creator, $pageInternalName);
-
-                if (!is_null($parent)) {
-                    if ($parent instanceof HasPagePartsInterface) {
-                        $parent = $nodeRepo->getNodeFor($parent);
-                    }
-                    $rootNode->setParent($parent);
-                }
-                $em->persist($rootNode);
-                $em->flush();
-
-                $translationNode = $rootNode->getNodeTranslation($language, true);
+        if (!is_null($parent)) {
+            if ($parent instanceof HasNodeInterface) {
+                $parent = $this->getNodeRepository()->getNodeFor($parent);
+            }
+            if ($parent instanceof Node) {
+                $newPage->setParent($parent);
             } else {
-                // Clone the $pageTypeInstance.
-                $pageTypeInstance = clone $pageTypeInstance;
-
-                $em->persist($pageTypeInstance);
-                $em->flush();
-
-                // Create the translationnode.
-                $translationNode = $nodeTranslationRepo->createNodeTranslationFor($pageTypeInstance, $language, $rootNode, $creator);
+                throw new \InvalidArgumentException('Parent must be an instance of HasNodeInterface or Node');
             }
-
-            // Make SEO.
-            $seo = null;
-
-            if (!is_null($seoRepo)) {
-                $seo = $seoRepo->findOrCreateFor($pageTypeInstance);
-            }
-
-            $callback($pageTypeInstance, $translationNode, $seo);
-
-            $em->persist($translationNode);
-            $em->flush();
-
-            $translationNode->setOnline($setOnline);
-
-            if (!is_null($seo)) {
-                $em->persist($seo);
-            }
-
-            $em->persist($translationNode);
-            $em->flush();
         }
 
-        // ACL
-        $aclService = new ACLPermissionCreatorService();
-        $aclService->setContainer($this->container);
-        $aclService->createPermission($rootNode);
+        if (is_null($node)) {
+            $node = $this->getNodeRepository()->createNodeFor($newPage, $locale, $owner, $internalName);
+            $nodeTranslation = $node->getNodeTranslation($locale, true);
+        } else if ($node instanceof Node) {
+            $nodeTranslation = $node->getNodeTranslation($locale, true);
+            if (is_null($nodeTranslation)) {
+                $nodeTranslation = $this->getNodeTranslationRepository()->createNodeTranslationFor($newPage, $locale, $node, $owner);
+            }
+        } else {
+            throw new \InvalidArgumentException('Node should null or an instanceof Node');
+        }
 
-        return $rootNode;
+        if ($online) {
+            $nodeTranslation->setOnline($online);
+            $this->em->persist($nodeTranslation);
+        }
+        if ($newPage->isStructureNode()) {
+            $nodeTranslation->setSlug('');
+            $this->em->persist($nodeTranslation);
+        }
+
+        if (is_callable($options['node_setter'])) {
+            $options['node_setter']($node, $locale);
+            $this->em->persist($node);
+        }
+
+        if (is_callable($options['node_translation_setter'])) {
+            $options['node_translation_setter']($nodeTranslation, $locale);
+            $this->em->persist($nodeTranslation);
+        }
+
+        $this->em->flush();
+
+        // @todo make an event which will listen to this and initialise the permissions
+        $this->eventDispatcher->dispatch(Events::ADD_NODE, new NodeEvent($newPage, $nodeTranslation, $nodeTranslation->getPublicNodeVersion(), $newPage));
+
+        return array($newPage, $node, $nodeTranslation);
     }
 
-    protected $container;
-    /**
-     * Sets the Container.
-     *
-     * @param ContainerInterface $container A ContainerInterface instance
-     *
-     * @api
-     */
-    public function setContainer(ContainerInterface $container = null)
+    public function createMultiLanguagePage($translationInstance, $locales, $options)
     {
-        $this->container = $container;
+        $result = array();
+        $baseNode = null;
+
+        foreach ($locales as $locale) {
+            list ($page, $node, $nodeTranslation) = $this->createPage($locale, $translationInstance, array_merge($options, array(
+                'node' => $baseNode
+            )));
+
+            $baseNode = $node;
+            $result[$locale] = array($page, $node, $nodeTranslation);
+        }
+
+        return $result;
     }
+
+    /**
+     * @var NodeRepository
+     */
+    private $nodeRepo;
+
+    /**
+     * @return NodeRepository
+     */
+    private function getNodeRepository()
+    {
+        if (is_null($this->nodeRepo)) {
+            $this->nodeRepo = $this->em->getRepository('KunstmaaNodeBundle:Node');
+        }
+
+        return $this->nodeRepo;
+    }
+
+    /**
+     * @var NodeTranslationRepository
+     */
+    private $nodeTranslationRepo;
+
+    /**
+     * @return NodeTranslationRepository
+     */
+    private function getNodeTranslationRepository()
+    {
+        if (is_null($this->nodeRepo)) {
+            $this->nodeTranslationRepo = $this->em->getRepository('KunstmaaNodeBundle:NodeTranslation');
+        }
+
+        return $this->nodeTranslationRepo;
+    }
+
 }
