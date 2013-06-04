@@ -3,27 +3,22 @@
 namespace Kunstmaan\NodeBundle\Helper\Services;
 
 use Doctrine\ORM\EntityManager;
-use Kunstmaan\NodeBundle\Entity\HasNodeInterface,
-    Kunstmaan\NodeBundle\Entity\Node;
 
+use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
+use Kunstmaan\NodeBundle\Entity\Node;
 use Kunstmaan\NodeBundle\Event\Events;
 use Kunstmaan\NodeBundle\Event\NodeEvent;
-use Kunstmaan\NodeBundle\Repository\NodeRepository,
-    Kunstmaan\NodeBundle\Helper\Services\ACLPermissionCreatorService;
-
+use Kunstmaan\NodeBundle\Repository\NodeRepository;
 use Kunstmaan\NodeBundle\Repository\NodeTranslationRepository;
-use Kunstmaan\PagePartBundle\Helper\HasPagePartsInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface,
-    Symfony\Component\DependencyInjection\ContainerInterface;
-
 use Kunstmaan\AdminBundle\Entity\User as Baseuser;
+
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Service to create new pages.
  */
-
-class PageCreatorService Implements ContainerAwareInterface
+class PageCreatorService
 {
 
     /**
@@ -36,12 +31,27 @@ class PageCreatorService Implements ContainerAwareInterface
      */
     private $eventDispatcher;
 
+    /**
+     * @param EntityManager            $em
+     * @param EventDispatcherInterface $eventDispatcher
+     */
     public function __construct(EntityManager $em, EventDispatcherInterface $eventDispatcher)
     {
         $this->em = $em;
         $this->eventDispatcher = $eventDispatcher;
     }
 
+    /**
+     * @param string           $locale
+     * @param HasNodeInterface $pageInstance
+     * @param array            $options
+     *        possible options are:
+     *          owner* (User), parent (Node|HasNodeInterface), node (Node), online (Boolean), internal_name (string)
+     *          page_setter (Callable), node_setter (Callable), node_translation_setter (Callable)
+     *
+     * @return array (page, node, nodeTranslation, nodeVersion)
+     * @throws \InvalidArgumentException
+     */
     public function createPage($locale, HasNodeInterface $pageInstance, $options)
     {
         $options = array_merge(array(
@@ -76,10 +86,10 @@ class PageCreatorService Implements ContainerAwareInterface
         $this->em->flush();
 
         if (!is_null($parent)) {
-            if ($parent instanceof HasNodeInterface) {
-                $parent = $this->getNodeRepository()->getNodeFor($parent);
-            }
             if ($parent instanceof Node) {
+                $parent = $parent->getNodeTranslation($locale)->getRef($this->em);
+            }
+            if ($parent instanceof HasNodeInterface) {
                 $newPage->setParent($parent);
             } else {
                 throw new \InvalidArgumentException('Parent must be an instance of HasNodeInterface or Node');
@@ -119,24 +129,35 @@ class PageCreatorService Implements ContainerAwareInterface
 
         $this->em->flush();
 
-        // @todo make an event which will listen to this and initialise the permissions
-        $this->eventDispatcher->dispatch(Events::ADD_NODE, new NodeEvent($newPage, $nodeTranslation, $nodeTranslation->getPublicNodeVersion(), $newPage));
+        $nodeVersion = $nodeTranslation->getPublicNodeVersion();
 
-        return array($newPage, $node, $nodeTranslation);
+        $this->eventDispatcher->dispatch(Events::ADD_NODE, new NodeEvent($node, $nodeTranslation, $nodeVersion, $newPage));
+
+        return array($newPage, $node, $nodeTranslation, $nodeVersion);
     }
 
-    public function createMultiLanguagePage($translationInstance, $locales, $options)
+    /**
+     * @param HasNodeInterface $translationInstance
+     * @param array            $locales
+     * @param array            $options
+     *        possible options are:
+     *          owner* (User), parent (Node|HasNodeInterface), node (Node), online (Boolean), internal_name (string)
+     *          page_setter (Callable), node_setter (Callable), node_translation_setter (Callable)
+     *
+     * @return array (page, node, nodeTranslation, nodeVersion)
+     */
+    public function createMultiLanguagePage(HasNodeInterface $translationInstance, $locales, $options)
     {
         $result = array();
         $baseNode = null;
 
         foreach ($locales as $locale) {
-            list ($page, $node, $nodeTranslation) = $this->createPage($locale, $translationInstance, array_merge($options, array(
+            list ($page, $node, $nodeTranslation, $nodeVersion) = $this->createPage($locale, $translationInstance, array_merge(array(
                 'node' => $baseNode
-            )));
+            ), $options));
 
             $baseNode = $node;
-            $result[$locale] = array($page, $node, $nodeTranslation);
+            $result[$locale] = array($page, $node, $nodeTranslation, $nodeVersion);
         }
 
         return $result;
@@ -153,7 +174,7 @@ class PageCreatorService Implements ContainerAwareInterface
     private function getNodeRepository()
     {
         if (is_null($this->nodeRepo)) {
-            $this->nodeRepo = $this->em->getRepository('KunstmaaNodeBundle:Node');
+            $this->nodeRepo = $this->em->getRepository('KunstmaanNodeBundle:Node');
         }
 
         return $this->nodeRepo;
@@ -170,7 +191,7 @@ class PageCreatorService Implements ContainerAwareInterface
     private function getNodeTranslationRepository()
     {
         if (is_null($this->nodeRepo)) {
-            $this->nodeTranslationRepo = $this->em->getRepository('KunstmaaNodeBundle:NodeTranslation');
+            $this->nodeTranslationRepo = $this->em->getRepository('KunstmaanNodeBundle:NodeTranslation');
         }
 
         return $this->nodeTranslationRepo;
