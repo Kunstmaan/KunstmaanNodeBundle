@@ -89,3 +89,7 @@ services:
         arguments: ["@doctrine.orm.entity_manager"]
         tags:
             - { name: twig.extension }
+
+    kunstmaan_node.page_creator:
+        class: Kunstmaan\NodeBundle\Helper\Creators\PageCreator
+        arguments: ["@doctrine.orm.entity_manager", "@event_dispatcher"]

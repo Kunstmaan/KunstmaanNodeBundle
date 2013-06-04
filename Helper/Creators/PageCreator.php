@@ -1,6 +1,6 @@
 <?php
 
-namespace Kunstmaan\NodeBundle\Helper\Services;
+namespace Kunstmaan\NodeBundle\Helper\Creators;
 
 use Doctrine\ORM\EntityManager;
 
@@ -18,7 +18,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 /**
  * Service to create new pages.
  */
-class PageCreatorService
+class PageCreator
 {
 
     /**
