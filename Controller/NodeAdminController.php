@@ -10,19 +10,11 @@ use InvalidArgumentException;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Collections\ArrayCollection;
 
-use Kunstmaan\NodeBundle\Helper\Creators\ACLPermissionCreator;
-use Kunstmaan\NodeBundle\Helper\Creators\PageCreator;
-use Symfony\Bridge\Monolog\Logger;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\Security\Acl\Domain\RoleSecurityIdentity;
-use Symfony\Component\Security\Acl\Model\MutableAclProviderInterface;
-use Symfony\Component\Security\Acl\Model\ObjectIdentityRetrievalStrategyInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
-use Symfony\Component\Security\Acl\Model\EntryInterface;
-
 
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -32,6 +24,7 @@ use Kunstmaan\AdminBundle\Entity\User;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionAdmin;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
+use Kunstmaan\AdminBundle\Helper\Creators\ACLPermissionCreator;
 use Kunstmaan\AdminListBundle\AdminList\AdminList;
 use Kunstmaan\NodeBundle\AdminList\NodeAdminListConfigurator;
 use Kunstmaan\NodeBundle\Entity\Node;
@@ -47,6 +40,7 @@ use Kunstmaan\NodeBundle\Repository\NodeVersionRepository;
 use Kunstmaan\NodeBundle\Event\CopyPageTranslationNodeEvent;
 use Kunstmaan\NodeBundle\Entity\NodeVersion;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
+use Kunstmaan\NodeBundle\Helper\Creators\PageCreator;
 use Kunstmaan\UtilitiesBundle\Helper\ClassLookup;
 
 /**
