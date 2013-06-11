@@ -10,17 +10,11 @@ use InvalidArgumentException;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Collections\ArrayCollection;
 
-use Symfony\Bridge\Monolog\Logger;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\Security\Acl\Domain\RoleSecurityIdentity;
-use Symfony\Component\Security\Acl\Model\MutableAclProviderInterface;
-use Symfony\Component\Security\Acl\Model\ObjectIdentityRetrievalStrategyInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
-use Symfony\Component\Security\Acl\Model\EntryInterface;
-
 
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -30,6 +24,7 @@ use Kunstmaan\AdminBundle\Entity\User;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionAdmin;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
+use Kunstmaan\AdminBundle\Helper\Creators\ACLPermissionCreator;
 use Kunstmaan\AdminListBundle\AdminList\AdminList;
 use Kunstmaan\NodeBundle\AdminList\NodeAdminListConfigurator;
 use Kunstmaan\NodeBundle\Entity\Node;
@@ -45,6 +40,7 @@ use Kunstmaan\NodeBundle\Repository\NodeVersionRepository;
 use Kunstmaan\NodeBundle\Event\CopyPageTranslationNodeEvent;
 use Kunstmaan\NodeBundle\Entity\NodeVersion;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
+use Kunstmaan\NodeBundle\Helper\Creators\PageCreator;
 use Kunstmaan\UtilitiesBundle\Helper\ClassLookup;
 
 /**
@@ -370,56 +366,32 @@ class NodeAdminController extends Controller
             throw new InvalidArgumentException('Please specify a type of page to create!');
         }
 
-        /* @var HasNodeInterface $newPage */
-        $newPage = new $type();
+        /** @var PageCreator $pageCreator */
+        $pageCreator = $this->get('kunstmaan_node.page_creator');
 
-        $title = $request->get('title');
-        if (is_string($title) && !empty($title)) {
-            $newPage->setTitle($title);
-        } else {
-            $newPage->setTitle('New page');
-        }
-
-        $this->em->persist($newPage);
-        $this->em->flush();
-
-        $newPage->setParent($parentPage);
-
-        /* @var Node $nodeNewPage */
-        $nodeNewPage = $this->em->getRepository('KunstmaanNodeBundle:Node')->createNodeFor($newPage, $this->locale, $this->user);
-        $nodeTranslation = $nodeNewPage->getNodeTranslation($this->locale, true);
-        if ($newPage->isStructureNode()) {
-            $nodeTranslation->setSlug('');
-            $this->em->persist($nodeTranslation);
-        }
-
-        $this->em->flush(); // @todo move flush?
-
-        /* @var MutableAclProviderInterface $aclProvider */
-        $aclProvider = $this->container->get('security.acl.provider');
-        /* @var ObjectIdentityRetrievalStrategyInterface $strategy */
-        $strategy = $this->container->get('security.acl.object_identity_retrieval_strategy');
-        $parentIdentity = $strategy->getObjectIdentity($parentNode);
-        $parentAcl = $aclProvider->findAcl($parentIdentity);
-
-        $newIdentity = $strategy->getObjectIdentity($nodeNewPage);
-        $newAcl = $aclProvider->createAcl($newIdentity);
-
-        $aces = $parentAcl->getObjectAces();
-        /* @var EntryInterface $ace */
-        foreach ($aces as $ace) {
-            $securityIdentity = $ace->getSecurityIdentity();
-            if ($securityIdentity instanceof RoleSecurityIdentity) {
-                $newAcl->insertObjectAce($securityIdentity, $ace->getMask());
+        /**
+         * @var HasNodeInterface $page
+         * @var Node             $node
+         * @var NodeTranslation  $nodeTranslation
+         */
+        list ($page, $node, $nodeTranslation) = $pageCreator->createPage($this->locale, new $type(), array(
+            'owner' => $this->user,
+            'parent' => $parentPage,
+            'page_setter' => function(HasNodeInterface $page, $locale) use ($request) {
+                $title = $request->get('title');
+                if (is_string($title) && !empty($title)) {
+                    $page->setTitle($title);
+                } else {
+                    $page->setTitle('New page');
+                }
             }
-        }
-        $aclProvider->updateAcl($newAcl);
+        ));
 
-        $nodeVersion = $nodeTranslation->getPublicNodeVersion();
+        /** @var ACLPermissionCreator $permissionCreator */
+        $permissionCreator = $this->get('kunstmaan_admin.permission_creator');
+        $permissionCreator->initByExample($node, $parentNode);
 
-        $this->get('event_dispatcher')->dispatch(Events::ADD_NODE, new NodeEvent($nodeNewPage, $nodeTranslation, $nodeVersion, $newPage));
-
-        return $this->redirect($this->generateUrl('KunstmaanNodeBundle_nodes_edit', array('id' => $nodeNewPage->getId())));
+        return $this->redirect($this->generateUrl('KunstmaanNodeBundle_nodes_edit', array('id' => $node->getId())));
     }
 
     /**
