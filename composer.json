@@ -19,11 +19,11 @@
         "knplabs/knp-menu": "2.0.0-alpha1",
         "knplabs/knp-menu-bundle": "2.0.0alpha1",
         "symfony-cmf/routing-bundle": "*",
-        "kunstmaan/adminlist-bundle": "self.version",
-        "kunstmaan/admin-bundle": "self.version",
-        "kunstmaan/utilities-bundle": "self.version"
+        "kunstmaan/adminlist-bundle": "2.3.*",
+        "kunstmaan/admin-bundle": "2.3.*",
+        "kunstmaan/utilities-bundle": "2.3.*"
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "autoload": {
         "psr-0": { "Kunstmaan\\NodeBundle": "" }
     },
