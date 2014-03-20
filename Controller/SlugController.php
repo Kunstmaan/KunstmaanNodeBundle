@@ -72,50 +72,66 @@ class SlugController extends Controller
             }
         }
         if (is_null($entity)) {
-            $entity = $nodeTranslation->getPublicNodeVersion()->getRef($em);
+            $nodeVersion = $nodeTranslation->getPublicNodeVersion();
+            $entity = $nodeVersion->getRef($em);
         }
 
-        /* @var SecurityContextInterface $securityContext */
-        $securityContext = $this->get('security.context');
-        if (false === $securityContext->isGranted(PermissionMap::PERMISSION_VIEW, $node)) {
-            throw new AccessDeniedHttpException('You do not have sufficient rights to access this page.');
-        }
+        // create a Response with a Last-Modified header
+        $response = new Response();
+        $response->setLastModified($nodeVersion->getUpdated());
+        $response->setPublic();
 
-        /* @var AclHelper $aclHelper */
-        $aclHelper = $this->container->get('kunstmaan_admin.acl.helper');
-        $includeOffline = $preview;
-        $nodeMenu = new NodeMenu($em, $securityContext, $aclHelper, $locale, $node, PermissionMap::PERMISSION_VIEW, $includeOffline);
-
-        unset($securityContext);
-        unset($aclHelper);
-
-        //render page
-        $renderContext = new RenderContext(
-            array(
-                'nodetranslation'   => $nodeTranslation,
-                'slug'              => $url,
-                'page'              => $entity,
-                'resource'          => $entity,
-                'nodemenu'          => $nodeMenu,
-            )
-        );
-        if (method_exists($entity, 'getDefaultView')) {
-            /** @noinspection PhpUndefinedMethodInspection */
-            $renderContext->setView($entity->getDefaultView());
-        }
-
-        /** @noinspection PhpUndefinedMethodInspection */
-        $response = $entity->service($this->container, $request, $renderContext);
-
-        if ($response instanceof RedirectResponse) {
+        // Check that the Response is not modified for the given Request
+        if ($response->isNotModified($this->getRequest())) {
+            // return the 304 Response immediately
             return $response;
-        }
+        } else {
+            /* @var SecurityContextInterface $securityContext */
+            $securityContext = $this->get('security.context');
+            if (false === $securityContext->isGranted(PermissionMap::PERMISSION_VIEW, $node)) {
+                throw new AccessDeniedHttpException('You do not have sufficient rights to access this page.');
+            }
 
-        $view = $renderContext->getView();
-        if (empty($view)) {
-            throw $this->createNotFoundException('No page found for slug ' . $url);
-        }
+            /* @var AclHelper $aclHelper */
+            $aclHelper = $this->container->get('kunstmaan_admin.acl.helper');
+            $includeOffline = $preview;
+            $nodeMenu = new NodeMenu($em, $securityContext, $aclHelper, $locale, $node, PermissionMap::PERMISSION_VIEW, $includeOffline);
 
-        return $this->render($view, $renderContext->getArrayCopy());
+            unset($securityContext);
+            unset($aclHelper);
+
+            //render page
+            $renderContext = new RenderContext(
+                array(
+                    'nodetranslation'   => $nodeTranslation,
+                    'slug'              => $url,
+                    'page'              => $entity,
+                    'resource'          => $entity,
+                    'nodemenu'          => $nodeMenu,
+                )
+            );
+            if (method_exists($entity, 'getDefaultView')) {
+                /** @noinspection PhpUndefinedMethodInspection */
+                $renderContext->setView($entity->getDefaultView());
+            }
+
+            /** @noinspection PhpUndefinedMethodInspection */
+            $response = $entity->service($this->container, $request, $renderContext);
+
+            if ($response instanceof RedirectResponse) {
+                return $response;
+            } else {
+                $response = new Response();
+                $response->setLastModified($nodeTranslation->getPublicNodeVersion()->getUpdated());
+            }
+
+            $view = $renderContext->getView();
+            if (empty($view)) {
+                throw $this->createNotFoundException('No page found for slug ' . $url);
+            }
+
+
+            return $this->render($view, $renderContext->getArrayCopy(), $response);
+        }
     }
 }
