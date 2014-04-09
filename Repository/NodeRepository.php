@@ -145,8 +145,9 @@ class NodeRepository extends NestedTreeRepository
     public function getChildNodes($parentId, $lang, $permission, AclHelper $aclHelper, $includeHiddenFromNav = false)
     {
         $qb = $this->createQueryBuilder('b')
-                   ->select('b')
+                   ->select('b','t','v')
                    ->leftJoin('b.nodeTranslations', 't', 'WITH', 't.lang = :lang')
+                   ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id')
                    ->where('b.deleted = 0');
 
         if (!$includeHiddenFromNav) {
@@ -159,8 +160,8 @@ class NodeRepository extends NestedTreeRepository
             $qb->andWhere('b.parent = :parent')
                ->setParameter('parent', $parentId);
         }
-        $qb->addOrderBy('t.weight', 'ASC')
-           ->addOrderBy('t.title', 'ASC');
+        $qb->addOrderBy('b.lft', 'ASC')
+           ->addOrderBy('b.rgt', 'DESC');
         $qb->setParameter('lang', $lang);
         $query = $aclHelper->apply($qb, new PermissionDefinition(array($permission)));
 
@@ -190,9 +191,8 @@ class NodeRepository extends NestedTreeRepository
             ->leftJoin('n', '(SELECT lang, title, weight, node_id FROM kuma_node_translations GROUP BY node_id ORDER BY id ASC)', 'v', "(v.node_id = n.id AND v.lang <> ?)")
             ->where('n.deleted = 0')
             ->addGroupBy('n.id')
-            ->addOrderBy('parent', 'ASC')
-            ->addOrderBy('weight', 'ASC')
-            ->addOrderBy('title', 'ASC');
+            ->addOrderBy('lft', 'ASC')
+            ->addOrderBy('rgt', 'DESC');
 
         if (!$includeHiddenFromNav) {
             $qb->andWhere('n.hiddenFromNav <> 0');
@@ -228,8 +228,9 @@ class NodeRepository extends NestedTreeRepository
 
         if ($lang) {
             // Directly fetch the nodeTranslation in one query
-            $qb->select('node, t')
+            $qb->select('node, t', 'v')
                 ->innerJoin('node.nodeTranslations', 't')
+                ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id')
                 ->where('node.deleted = 0')
                 ->andWhere('t.lang = :lang')
                 ->setParameter('lang', $lang);
@@ -253,7 +254,9 @@ class NodeRepository extends NestedTreeRepository
     public function getAllTopNodes()
     {
         $qb = $this->createQueryBuilder('b')
-                   ->select('b')
+                   ->select('b', 't', 'v')
+                   ->leftJoin('b.nodeTranslations', 't', 'WITH', 't.lang = :lang')
+                   ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id')
                    ->where('b.deleted = 0')
                    ->andWhere('b.parent IS NULL');
 
@@ -275,15 +278,16 @@ class NodeRepository extends NestedTreeRepository
     public function getNodesByInternalName($internalName, $lang, $parentId = false, $includeOffline = false)
     {
         $qb = $this->createQueryBuilder('n')
-            ->select('n, t')
+            ->select('n, t', 'v')
             ->innerJoin('n.nodeTranslations', 't')
+            ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id')
             ->where('n.deleted = 0')
             ->andWhere('n.internalName = :internalName')
             ->setParameter('internalName', $internalName)
             ->andWhere('t.lang = :lang')
             ->setParameter('lang', $lang)
-            ->addOrderBy('t.weight', 'ASC')
-            ->addOrderBy('t.title', 'ASC');
+            ->addOrderBy('n.lft', 'ASC')
+            ->addOrderBy('n.rgt', 'DESC');
 
         if (!$includeOffline) {
             $qb->andWhere('t.online = true');
