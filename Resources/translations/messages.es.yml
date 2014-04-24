@@ -9,6 +9,8 @@ action:
     save: "Guardar"
     delete: "Borrar"
     addsubpage: "Agregar subpágina"
+    reinitialize: "Reinitialize"
 
 pages:
     copynotavailable: "Por favor, traduzca la página padre primero"
+    reinitializefrom: "Reinicializar de otro idioma"

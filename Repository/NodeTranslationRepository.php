@@ -212,10 +212,20 @@ class NodeTranslationRepository extends EntityRepository
                 " has no id, maybe you forgot to flush first");
         }
 
-        $nodeTranslation = new NodeTranslation();
+        // check for existing
+        $nodeTranslation = $this->findOneBy(array(
+            'node' => $node->getId(),
+            'lang' => $lang
+        ));
+
+        if (!$nodeTranslation) {
+            $nodeTranslation = new NodeTranslation();
+            $nodeTranslation
+                ->setLang($lang)
+                ->setNode($node);
+        }
+
         $nodeTranslation
-            ->setNode($node)
-            ->setLang($lang)
             ->setTitle($hasNode->getTitle())
             ->setSlug(Slugifier::slugify($hasNode->getTitle(), ''))
             ->setOnline(false)

@@ -150,6 +150,10 @@ class ActionsMenuBuilder
             if (!is_null($node->getParent()) && ($this->context->isGranted(PermissionMap::PERMISSION_DELETE, $node))) {
                 $menu->addChild('action.delete', array('linkAttributes' => array('type' => 'button', 'class' => 'btn', 'onClick' => 'oldEdited = isEdited; isEdited=false', 'data-toggle' => 'modal', 'data-keyboard' => 'true', 'data-target' => '#delete-page-modal'), 'extras' => array('renderType' => 'button')));
             }
+
+            if (!is_null($node->getParent() && ($this->context->isGranted(PermissionMap::PERMISSION_EDIT)))) {
+                $menu->addChild('action.reinitialize', array('linkAttributes' => array('class' => 'btn', 'data-toggle' => 'modal', 'data-keyboard' => 'true', 'data-target' => '#reinitialize-modal')));
+            }
         }
 
         $this->dispatcher->dispatch(Events::CONFIGURE_ACTION_MENU, new ConfigureActionMenuEvent($this->factory, $menu, $activeNodeVersion));

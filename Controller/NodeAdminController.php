@@ -444,6 +444,7 @@ class NodeAdminController extends Controller
         $this->init();
         /* @var Node $node */
         $node = $this->em->getRepository('KunstmaanNodeBundle:Node')->find($id);
+        $nodeTranslations = $node->getNodeTranslations(true);
 
         $this->checkPermission($node, PermissionMap::PERMISSION_EDIT);
 
@@ -468,7 +469,7 @@ class NodeAdminController extends Controller
 
             return $this->render('KunstmaanNodeBundle:NodeAdmin:pagenottranslated.html.twig', array(
                 'node' => $node,
-                'nodeTranslations' => $node->getNodeTranslations(true),
+                'nodeTranslations' => $nodeTranslations,
                 'copyfromotherlanguages' => $parentsAreOk
             ));
         }
@@ -579,6 +580,7 @@ class NodeAdminController extends Controller
             'nodeVersions' => $nodeVersions,
             'node' => $node,
             'nodeTranslation' => $nodeTranslation,
+            'nodeTranslations' => $nodeTranslations,
             'draft' => $draft,
             'draftNodeVersion' => $draftNodeVersion,
             'subaction' => $subaction,
