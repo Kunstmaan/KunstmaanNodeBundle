@@ -292,13 +292,6 @@ class NodeMenu
 
         if (array_key_exists($internalName, $this->nodesByInternalName)) {
             $nodes = $this->nodesByInternalName[$internalName];
-            $nodes = array_filter($nodes, function (Node $entry) use ($includeOffline) {
-                if ($entry->isDeleted() && !$includeOffline) {
-                    return false;
-                }
-                return true;
-            });
-
             if (!is_null($parent)) {
                 if ($parent instanceof NodeTranslation) {
                     $parentNode = $parent->getNode();

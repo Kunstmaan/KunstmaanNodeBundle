@@ -14,9 +14,14 @@ use Gedmo\Tree\Node as GedmoNode;
  * Node
  *
  * @ORM\Entity(repositoryClass="Kunstmaan\NodeBundle\Repository\NodeRepository")
- * @ORM\Table(name="kuma_nodes", indexes={@ORM\Index(name="idx_internal_name", columns={"internal_name"}), @ORM\Index(name="idx_ref_entity_name", columns={"ref_entity_name"})})
+ * @ORM\Table(name="kuma_nodes", indexes={
+ *      @ORM\Index(name="idx_internal_name", columns={"internal_name"}),
+ *      @ORM\Index(name="idx_ref_entity_name", columns={"ref_entity_name"}),
+ *      @ORM\Index(name="idx_deleted_at", columns={"deleted_at"}),
+ * })
  * @ORM\HasLifecycleCallbacks()
  * @ORM\ChangeTrackingPolicy("DEFERRED_EXPLICIT")
+ * @Gedmo\SoftDeleteable(fieldName="deletedAt", timeAware=false)
  * @Gedmo\Tree(type="nested")
  */
 class Node extends AbstractEntity implements GedmoNode
@@ -83,8 +88,16 @@ class Node extends AbstractEntity implements GedmoNode
      * @var bool
      *
      * @ORM\Column(type="boolean")
+     * @deprecated Use Gedmo SoftDeleteable (deletedAt) instead
      */
     protected $deleted;
+
+    /**
+     * @var \DateTime
+     *
+     * @ORM\Column(name="deleted_at", type="datetime", nullable=true)
+     */
+    protected $deletedAt;
 
     /**
      * @var bool
@@ -151,15 +164,7 @@ class Node extends AbstractEntity implements GedmoNode
      */
     public function getChildren()
     {
-        return $this->children->filter(
-            function (Node $entry) {
-                if ($entry->isDeleted()) {
-                    return false;
-                }
-
-                return true;
-            }
-        );
+        return $this->children;
     }
 
     /**
@@ -319,19 +324,40 @@ class Node extends AbstractEntity implements GedmoNode
      */
     public function isDeleted()
     {
-        return $this->deleted;
+        return !is_null($this->deletedAt);
     }
 
     /**
      * @param bool $deleted
      *
      * @return Node
+     * @deprecated Use Gedmo SoftDeleteable (deletedAt) instead
      */
     public function setDeleted($deleted)
     {
         $this->deleted = $deleted;
 
         return $this;
+    }
+
+    /**
+     * @param \DateTime $deletedAt
+     *
+     * @return Node
+     */
+    public function setDeletedAt($deletedAt)
+    {
+        $this->deletedAt = $deletedAt;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getDeletedAt()
+    {
+        return $this->deletedAt;
     }
 
     /**

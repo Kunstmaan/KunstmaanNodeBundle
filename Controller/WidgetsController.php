@@ -63,9 +63,8 @@ class WidgetsController extends Controller
         $qb = $em->getConnection()->createQueryBuilder();
         $qb->select('n.id, n.parent_id, t.weight, t.title, t.online, t.url')
             ->from('kuma_nodes', 'n')
-            ->leftJoin('n', 'kuma_node_translations', 't', "(t.node_id = n.id AND t.lang = ?)")
-            ->where('n.deleted = 0')
-            ->andWhere('t.online IN (0, 1)')
+            ->leftJoin('n', 'kuma_node_translations', 't', '(t.node_id = n.id AND t.lang = ?)')
+            ->where('n.deleted_at IS NULL')
             ->addOrderBy('parent_id', 'ASC')
             ->addOrderBy('weight', 'ASC')
             ->addOrderBy('title', 'ASC');

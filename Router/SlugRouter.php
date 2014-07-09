@@ -128,6 +128,7 @@ class SlugRouter implements RouterInterface
 
             /* @var NodeTranslationRepository $nodeTranslationRepo */
             $nodeTranslationRepo = $em->getRepository('KunstmaanNodeBundle:NodeTranslation');
+
             /* @var NodeTranslation $nodeTranslation */
             $nodeTranslation = $nodeTranslationRepo->getNodeTranslationForUrl($result['url'], $result['_locale']);
 
