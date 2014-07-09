@@ -1,6 +1,12 @@
 Upgrade Instructions
 ====================
 
+## To v2.3.23 with Gedmo soft deleteable
+
+When upgrading from a previous version, make sure you update the table structure (```app/console doctrine:schema:update --force```
+or ```app/console doctrine:migrations:diff && app/console doctrine:migrations:migrate```). And afterwards run
+```app/console kuma:node:migrate-soft-deletes```. All deleted nodes will get the current date as deleted_at timestamp.
+
 ## To v2.2 with nested set support
 
 To upgrade from a previous version, you have to copy the Doctrine migrations file from this bundle (Resources/DoctrineMigrations/Version20130611131506.php)
