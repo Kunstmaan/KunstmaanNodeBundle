@@ -7,6 +7,11 @@ When upgrading from a previous version, make sure you update the table structure
 or ```app/console doctrine:migrations:diff && app/console doctrine:migrations:migrate```). And afterwards run
 ```app/console kuma:node:migrate-soft-deletes```. All deleted nodes will get the current date as deleted_at timestamp.
 
+Also make sure that the gedmo soft delete and timestampable behavior is enabled by checking your app/config.yml file.
+It should contain :
+https://github.com/Kunstmaan/KunstmaanBundlesStandardEdition/pull/71/files
+
+
 ## To v2.2 with nested set support
 
 To upgrade from a previous version, you have to copy the Doctrine migrations file from this bundle (Resources/DoctrineMigrations/Version20130611131506.php)
