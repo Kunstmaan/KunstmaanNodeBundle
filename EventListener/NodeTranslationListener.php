@@ -196,8 +196,8 @@ class NodeTranslationListener
         // Adjust the URL.
         $translation->setUrl($translation->getFullSlug());
 
-        // Find all translations with this new URL, whose nodes are not deleted.
-        $translations = $nodeTranslationRepository->getNodeTranslationForUrl($translation->getUrl(), $translation->getLang(), false, $translation);
+        // Find all translations with this new URL
+        $translations = $nodeTranslationRepository->getNodeTranslationForUrl($translation->getUrl(), $translation->getLang(), $translation);
 
         $this->logger->addDebug('Found ' . count($translations) . ' node(s) that match url \'' . $translation->getUrl() . '\'');
 

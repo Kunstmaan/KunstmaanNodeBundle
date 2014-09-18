@@ -5,6 +5,7 @@ namespace Kunstmaan\NodeBundle\Entity;
 use DateTime;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 use Kunstmaan\AdminBundle\Entity\AbstractEntity;
 use Kunstmaan\UtilitiesBundle\Helper\ClassLookup;
 
@@ -12,7 +13,10 @@ use Kunstmaan\UtilitiesBundle\Helper\ClassLookup;
  * NodeVersion
  *
  * @ORM\Entity(repositoryClass="Kunstmaan\NodeBundle\Repository\NodeVersionRepository")
- * @ORM\Table(name="kuma_node_versions", indexes={@ORM\Index(name="idx_kuma_lookup", columns={"ref_id", "ref_entity_name"})})
+ * @ORM\Table(name="kuma_node_versions", indexes={
+ *      @ORM\Index(name="idx_kuma_lookup", columns={"ref_id", "ref_entity_name"}),
+ *      @ORM\Index(name="idx_created", columns={"created"})
+ * })
  * @ORM\HasLifecycleCallbacks()
  * @ORM\ChangeTrackingPolicy("DEFERRED_EXPLICIT")
  */
@@ -48,6 +52,7 @@ class NodeVersion extends AbstractEntity
      * @var \DateTime
      *
      * @ORM\Column(type="datetime")
+     * @Gedmo\Timestampable(on="create")
      */
     protected $created;
 
@@ -55,6 +60,7 @@ class NodeVersion extends AbstractEntity
      * @var \DateTime
      *
      * @ORM\Column(type="datetime")
+     * @Gedmo\Timestampable(on="update")
      */
     protected $updated;
 
@@ -81,15 +87,6 @@ class NodeVersion extends AbstractEntity
      * @ORM\JoinColumn(name="origin_id", referencedColumnName="id")
      */
     protected $origin;
-
-    /**
-     * Constructor
-     */
-    public function __construct()
-    {
-        $this->setCreated(new DateTime());
-        $this->setUpdated(new DateTime());
-    }
 
     /**
      * Set nodeTranslation

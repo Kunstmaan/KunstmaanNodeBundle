@@ -64,25 +64,6 @@ class NodeTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Kunstmaan\NodeBundle\Entity\Node::getChildren
-     * @covers Kunstmaan\NodeBundle\Entity\Node::setChildren
-     */
-    public function testGetSetChildrenWithDeletedChildren()
-    {
-        $children = new ArrayCollection();
-        $child = new Node();
-        $deletedChild = new Node();
-        $deletedChild->setDeleted(true);
-        $children->add($child);
-        $children->add($deletedChild);
-        $this->object->setChildren($children);
-
-        $this->assertEquals(1, $this->object->getChildren()->count());
-        $this->assertTrue($this->object->getChildren()->contains($child));
-        $this->assertFalse($this->object->getChildren()->contains($deletedChild));
-    }
-
-    /**
      * @covers Kunstmaan\NodeBundle\Entity\Node::addNode
      * @covers Kunstmaan\NodeBundle\Entity\Node::setParent
      * @covers Kunstmaan\NodeBundle\Entity\Node::getParent
@@ -179,14 +160,18 @@ class NodeTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers Kunstmaan\NodeBundle\Entity\Node::getDeletedAt
+     * @covers Kunstmaan\NodeBundle\Entity\Node::setDeletedAt
      * @covers Kunstmaan\NodeBundle\Entity\Node::isDeleted
-     * @covers Kunstmaan\NodeBundle\Entity\Node::setDeleted
      */
-    public function testIsSetDeleted()
+    public function testGetSetDeletedAt()
     {
+        $this->assertNull($this->object->getDeletedAt());
         $this->assertFalse($this->object->isDeleted());
-        $this->object->setDeleted(true);
+        $now = new \DateTime();
+        $this->object->setDeletedAt($now);
         $this->assertTrue($this->object->isDeleted());
+        $this->assertEquals($now, $this->object->getDeletedAt());
     }
 
     /**

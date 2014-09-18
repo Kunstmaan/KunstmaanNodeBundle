@@ -50,7 +50,6 @@ class NodeRepository extends NestedTreeRepository
             ->select('b', 't', 'v')
             ->leftJoin('b.nodeTranslations', 't', 'WITH', 't.lang = :lang')
             ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id')
-            ->where('b.deleted = 0')
             ->setParameter('lang', $lang)
             ->addOrderBy('t.weight', 'ASC')
             ->addOrderBy('t.title', 'ASC');
@@ -156,7 +155,6 @@ class NodeRepository extends NestedTreeRepository
             throw new \InvalidArgumentException("the entity of class " .
                 $node->getRefEntityName() . " has no id, maybe you forgot to flush first");
         }
-        $node->setDeleted(false);
         $node->setInternalName($internalName);
         $parent = $hasNode->getParent();
         if ($parent) {
@@ -214,7 +212,7 @@ SQL;
                 'v',
                 '(v.node_id = n.id AND v.lang <> ?)'
             )
-            ->where('n.deleted = 0')
+            ->where('n.deleted_at IS NULL')
             ->addGroupBy('n.id')
             ->addOrderBy('t.weight', 'ASC')
             ->addOrderBy('t.title', 'ASC');
@@ -255,8 +253,7 @@ SQL;
         // Directly hydrate the nodeTranslation and nodeVersion
         $qb->select('node', 't', 'v')
             ->innerJoin('node.nodeTranslations', 't')
-            ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id')
-            ->where('node.deleted = 0');
+            ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id');
 
         if ($lang) {
             $qb->andWhere('t.lang = :lang')
@@ -284,8 +281,7 @@ SQL;
             ->select('b', 't', 'v')
             ->leftJoin('b.nodeTranslations', 't')
             ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id')
-            ->where('b.deleted = 0')
-            ->andWhere('b.parent IS NULL');
+            ->where('b.parent IS NULL');
 
         $result = $qb->getQuery()->getResult();
 
@@ -308,8 +304,7 @@ SQL;
             ->select('n', 't', 'v')
             ->innerJoin('n.nodeTranslations', 't')
             ->leftJoin('t.publicNodeVersion', 'v', 'WITH', 't.publicNodeVersion = v.id')
-            ->where('n.deleted = 0')
-            ->andWhere('n.internalName = :internalName')
+            ->where('n.internalName = :internalName')
             ->setParameter('internalName', $internalName)
             ->andWhere('t.lang = :lang')
             ->setParameter('lang', $lang)
