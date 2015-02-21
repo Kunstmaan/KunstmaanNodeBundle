@@ -6,11 +6,11 @@ use Doctrine\ORM\EntityManager,
     Doctrine\ORM\Event\OnFlushEventArgs,
     Doctrine\ORM\Event\PostFlushEventArgs;
 
+use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
 use Kunstmaan\NodeBundle\Entity\Node,
     Kunstmaan\NodeBundle\Entity\NodeTranslation;
 
 use Kunstmaan\NodeBundle\Entity\NodeVersion;
-use Kunstmaan\NodeBundle\Entity\StructureNode;
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Component\HttpFoundation\Session\Session;
 
@@ -74,8 +74,8 @@ class NodeTranslationListener
                     /** @var $publicNodeVersion NodeVersion */
                     $publicNode = $publicNodeVersion->getRef($em);
 
-                    /** Do nothing for StructureNode objects, return */
-                    if ($publicNode instanceof StructureNode) {
+                    /** Do nothing for structure nodes, return */
+                    if ($publicNode instanceof HasNodeInterface && $publicNode->isStructureNode()) {
                         return;
                     }
 
