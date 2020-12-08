@@ -63,10 +63,6 @@ class TestPage extends AbstractPage implements HasNodeInterface, PageTabInterfac
 
 class TestType extends AbstractType
 {
-    /**
-     * @param FormBuilderInterface $builder
-     * @param array                $options
-     */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add('id', HiddenType::class);
@@ -82,9 +78,9 @@ class TestType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(array(
+        $resolver->setDefaults([
             'data_class' => TestPage::class,
-        ));
+        ]);
     }
 }
 

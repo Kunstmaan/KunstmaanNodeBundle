@@ -1,6 +1,6 @@
 <?php
 
-namespace Kunstmaan\NodeBundle\Tests\unit\Validator\Constraint;
+namespace Kunstmaan\NodeBundle\Tests\Validator\Constraint;
 
 use Kunstmaan\NodeBundle\Validator\Constraint\ValidExternalUrl;
 use Kunstmaan\NodeBundle\Validator\Constraint\ValidExternalUrlValidator;
@@ -32,7 +32,7 @@ class ValidExternalUrlValidatorTest extends ConstraintValidatorTestCase
         $this->validator->validate($url, new ValidExternalUrl());
 
         $this->buildViolation('This value is not a valid URL.')
-            ->setParameter('{{ value }}', '"'.$url.'"')
+            ->setParameter('{{ value }}', '"' . $url . '"')
             ->setCode(Url::INVALID_URL_ERROR)
             ->assertRaised();
     }

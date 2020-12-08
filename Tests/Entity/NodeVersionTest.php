@@ -9,9 +9,6 @@ use Kunstmaan\NodeBundle\Entity\NodeTranslation;
 use Kunstmaan\NodeBundle\Entity\NodeVersion;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Class NodeVersionTest
- */
 class NodeVersionTest extends TestCase
 {
     /**
@@ -19,10 +16,6 @@ class NodeVersionTest extends TestCase
      */
     protected $object;
 
-    /**
-     * Sets up the fixture, for example, opens a network connection.
-     * This method is called before a test is executed.
-     */
     protected function setUp(): void
     {
         $this->object = new NodeVersion();
