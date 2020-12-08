@@ -15,10 +15,6 @@ class NodeTest extends TestCase
      */
     protected $object;
 
-    /**
-     * Sets up the fixture, for example, opens a network connection.
-     * This method is called before a test is executed.
-     */
     protected function setUp(): void
     {
         $this->object = new Node();
@@ -156,7 +152,7 @@ class NodeTest extends TestCase
         $this->object->setId(1);
         $this->object->setRef($entity);
 
-        $this->assertEquals('node 1, refEntityName: '. \get_class($entity), $this->object->__toString());
+        $this->assertEquals('node 1, refEntityName: ' . \get_class($entity), $this->object->__toString());
     }
 
     public function testGetSetLeftRightLevel()

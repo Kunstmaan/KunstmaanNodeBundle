@@ -2,8 +2,8 @@
 
 namespace Kunstmaan\NodeBundle\Tests\Entity;
 
-use Doctrine\Common\Collections\ArrayCollection;
 use DateTime;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use Kunstmaan\NodeBundle\Entity\Node;
@@ -18,10 +18,6 @@ class NodeTranslationTest extends TestCase
      */
     protected $object;
 
-    /**
-     * Sets up the fixture, for example, opens a network connection.
-     * This method is called before a test is executed.
-     */
     protected function setUp(): void
     {
         $this->object = new NodeTranslation();

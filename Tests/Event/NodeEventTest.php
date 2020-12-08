@@ -6,14 +6,11 @@ use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
 use Kunstmaan\NodeBundle\Entity\Node;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
 use Kunstmaan\NodeBundle\Entity\NodeVersion;
-use Kunstmaan\NodeBundle\Event\RevertNodeAction;
+use Kunstmaan\NodeBundle\Event\NodeEvent;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Class RevertNodeActionTest
- */
-class RevertNodeActionTest extends TestCase
+class NodeEventTest extends TestCase
 {
     public function testGetSet()
     {
@@ -25,29 +22,23 @@ class RevertNodeActionTest extends TestCase
         $nodeVersion = $this->createMock(NodeVersion::class);
         $page = $this->createMock(HasNodeInterface::class);
 
-        $event = new RevertNodeAction($node, $nodeTranslation, $nodeVersion, $page, $nodeVersion, $page);
+        $event = new NodeEvent($node, $nodeTranslation, $nodeVersion, $page);
 
         $this->assertInstanceOf(Node::class, $event->getNode());
         $this->assertInstanceOf(NodeTranslation::class, $event->getNodeTranslation());
-        $this->assertInstanceOf(NodeVersion::class, $event->getNodeVersion());
         $this->assertInstanceOf(\get_class($page), $event->getPage());
-        $this->assertInstanceOf(NodeVersion::class, $event->getOriginNodeVersion());
-        $this->assertInstanceOf(\get_class($page), $event->getOriginPage());
+        $this->assertInstanceOf(NodeVersion::class, $event->getNodeVersion());
 
         $event->setNode($node);
         $event->setNodeTranslation($nodeTranslation);
         $event->setNodeVersion($nodeVersion);
         $event->setPage($page);
         $event->setResponse(new Response());
-        $event->setOriginNodeVersion($nodeVersion);
-        $event->setOriginPage($page);
 
         $this->assertInstanceOf(Node::class, $event->getNode());
         $this->assertInstanceOf(NodeTranslation::class, $event->getNodeTranslation());
         $this->assertInstanceOf(\get_class($page), $event->getPage());
         $this->assertInstanceOf(NodeVersion::class, $event->getNodeVersion());
         $this->assertInstanceOf(Response::class, $event->getResponse());
-        $this->assertInstanceOf(NodeVersion::class, $event->getOriginNodeVersion());
-        $this->assertInstanceOf(\get_class($page), $event->getOriginPage());
     }
 }
