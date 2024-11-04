@@ -52,6 +52,13 @@ class SlugRouter implements RouterInterface
     /** @var string */
     protected $slugPattern;
 
+    /**
+     * NEXT_MAJOR: Remove property
+     *
+     * @internal
+     */
+    protected bool $enabledImprovedRouter = false;
+
     public function __construct(
         DomainConfigurationInterface $domainConfiguration,
         RequestStack $requestStack,
@@ -340,5 +347,15 @@ class SlugRouter implements RouterInterface
         }
 
         return implode('|', $escapedLocales);
+    }
+
+    /**
+     * NEXT_MAJOR: Remove method
+     *
+     * @interal
+     */
+    public function enabledImprovedRouter(bool $enabled): void
+    {
+        $this->enabledImprovedRouter = $enabled;
     }
 }
